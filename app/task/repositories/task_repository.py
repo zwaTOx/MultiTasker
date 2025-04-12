@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload, aliased
 
-from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskUpdateRequest
+from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskUpdateRequest
 from ..models import Task as db_Task
 from ...models_db import Project, User, UserProjectAssociation
 from ...user.user_repository import UserRepository
@@ -104,7 +104,7 @@ class TaskRepository:
         db_Task.owner_id==user_id).first()
         return task
     
-    def get_accessed_tasks_filter(self, user_id: int, filters: Optional[TaskFilters] = None) -> List[db_Task]:
+    def get_accessed_tasks_filter(self, user_id: int, filters: Optional[TaskFilters] = None) -> List[TaskItemResponse]:
         if not UserRepository(self.db).check_admin_perms(user_id):
             query = self.db.query(db_Task).join(
             UserProjectAssociation,
@@ -142,7 +142,23 @@ class TaskRepository:
                         query = query.order_by(desc(sort_field))
                     else:
                         query = query.order_by(asc(sort_field))
-        return query.all()
+        tasks = query.all()
+        return [
+            TaskItemResponse(
+                id=task.id,
+                name=task.name,
+                status=task.status,
+                indicator=task.indicator,
+                created_at=task.created_at,
+                last_change=task.last_change,
+                deadline=task.deadline,
+                description=task.description,
+                project_id=task.project_id,
+                owner_id=task.owner_id,
+                performer_id=task.performer_id,
+                parent_task_id=task.parent_task_id
+            ) for task in tasks
+        ]
     
     def create_task(self, project_id: int, task_data: TaskCreateRequest, user_id: int) -> db_Task:
         task = db_Task(

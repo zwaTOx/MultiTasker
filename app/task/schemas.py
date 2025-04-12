@@ -115,12 +115,11 @@ class TaskItemResponse(BaseModel):
     name: str
     status: StatusType
     indicator: Optional[IndicatorType] = None
-    created_at: Optional[str] = None 
-    last_change: Optional[str] = None  
-    deadline: Optional[str] = None 
+    created_at: Optional[datetime] = None 
+    last_change: Optional[datetime] = None  
+    deadline: Optional[datetime] = None 
     description: Optional[str] = None
     project_id: int
 
-class TasksListResponse(BaseModel):
-    data: List[TaskItemResponse]
+
     

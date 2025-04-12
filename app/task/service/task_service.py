@@ -1,20 +1,19 @@
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from typing import Optional
 
 from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...task.repositories.task_repository import TaskRepository
 #from models import db_Task
-from ..schemas import TaskDetailResponse
+from ..schemas import TaskDetailResponse, TaskFilters
 
 class TaskService:
     def __init__(self, db):
         self.db = db
     
     def get_task_service(self, task_id: int, user_id: int) -> Optional[TaskDetailResponse]:
-        task_repo = TaskRepository(self.db)
-        task = task_repo.get_task(task_id)
+        task = TaskRepository(self.db).get_task(task_id)
         
         if task is None:
             raise ValueError("Task not found")
@@ -26,3 +25,7 @@ class TaskService:
         if project is None:
             raise ValueError("Project not found")
         return task
+    
+    def get_tasks_service(self, user_id, filters: TaskFilters = Depends()):
+        tasks = TaskRepository(self.db).get_accessed_tasks_filter(user_id, filters)
+        return tasks

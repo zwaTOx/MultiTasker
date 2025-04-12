@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 from datetime import datetime, timedelta, timezone
 
 from ..task.service.task_service import TaskService
@@ -10,7 +10,7 @@ from ..user.user_project_association_repo import UserProjectAssociation
 from ..models_db import User as db_user
 from ..models_db import Project as db_project
 from ..database import engine, Sessionlocal
-from .schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskResponseSchema, TaskUpdateRequest, TasksListResponse
+from .schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskResponseSchema, TaskUpdateRequest
 from .repositories.task_repository import TaskRepository
 from ..user.user_repository import UserRepository
 from pydantic import BaseModel
@@ -30,29 +30,11 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.get('/', response_model = TasksListResponse) 
+@router.get('/', response_model = List[TaskItemResponse]) 
 async def get_tasks_v2(user: user_dependency, db: db_dependency,
     filters: TaskFilters = Depends()):
-    if not user:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    tasks = TaskRepository(db).get_accessed_tasks_filter(
-        user_id=user['id'],
-        filters=filters
-    )
-    return {"data" : [
-        {
-            "id": task.id,
-            "name": task.name,
-            "status": task.status,
-            "indicator": task.indicator,
-            "created_at": task.created_at.isoformat(),
-            "last_change": task.last_change.isoformat(),
-            "deadline": task.deadline.isoformat(),
-            "description": task.description,
-            "project_id": task.project_id
-        }
-        for task in tasks
-    ]}
+    tasks = TaskService(db).get_tasks_service(user['id'], filters)
+    return tasks
 
 @router.get('/{task_id}', response_model=TaskDetailResponse)
 async def get_task(task_id: int, user: user_dependency, db: db_dependency):
