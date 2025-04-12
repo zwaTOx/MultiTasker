@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import literal
 from sqlalchemy.orm import Session
 
+from ..project.schemas import ProjectWithMembershipResponse
 from ..task.schemas import TaskFilters
 from ..models_db import UserProjectAssociation as db_UPA
 from ..models_db import Project as db_project
@@ -79,17 +80,25 @@ class UserProjectAssociation:
                 db_project.created_at,
                 literal(None).label('joined_at')   
             ).all()
-        result = []
-        for project in projects:
-            result.append({
-                "project_id": project.id,
-                "project_name": project.name,
-                "category_id": project.category_id,
-                "owner_id": project.user_id,
-                "project_created_at": project.created_at,
-                "user_joined_at": project.joined_at
-            })
-        return result
+        print(projects)
+        return [ProjectWithMembershipResponse(
+            project_id=project.id,
+            project_name=project.name,
+            category_id=project.category_id,
+            owner_id=project.user_id,
+            project_created_at=project.created_at,
+            user_joined_at=project.joined_at
+        ) for project in projects]
+        # for project in projects:
+        #     result.append({
+        #         "project_id": project.id,
+        #         "project_name": project.name,
+        #         "category_id": project.category_id,
+        #         "owner_id": project.user_id,
+        #         "project_created_at": project.created_at,
+        #         "user_joined_at": project.joined_at
+        #     })
+        # return result
 
     def get_accessed_projects_by_category(self, user_id: int, category_id: int):
         projects = self.db.query(

@@ -6,7 +6,6 @@ from ...user.user_repository import UserRepository
 from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...task.repositories.task_repository import TaskRepository
-#from models import db_Task
 from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskUpdateRequest
 
 class TaskService:

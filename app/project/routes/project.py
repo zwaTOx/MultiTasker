@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, List
 
+from ...project.schemas import ProjectWithMembershipResponse
+from ...project.service.project_service import ProjectService
 from ..project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...auth.auth import get_current_user
@@ -24,18 +26,17 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.get('/')
+@router.get('/', response_model=List[ProjectWithMembershipResponse])
 async def get_projects(user: user_dependency, db: db_dependency, 
     category_id: int = Query(None)):
-    if category_id:
-        category = db.query(db_category).filter(db_category.user_id==user['id'], 
-        db_category.id==category_id).first()
-        if category is None:
-            raise HTTPException(status_code=404 ,detail = 'Category not found')
-        projects = UserProjectAssociation(db).get_accessed_projects_by_category(user['id'], category_id)
+    try: 
+        projects = ProjectService(db).get_projects_service(user['id'], category_id)
         return projects
-    projects = UserProjectAssociation(db).get_accessed_projects(user['id'])
-    return projects
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
 
 @router.put('/{project_id}')
 async def move_project_in_category(project_id: int, request: MoveProjectRequest, 
