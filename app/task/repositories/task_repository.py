@@ -179,8 +179,6 @@ class TaskRepository:
 
     def update_task(self, task_id: int, task_data: TaskUpdateRequest) -> int:
         task = self.db.query(db_Task).filter(db_Task.id == task_id).first()
-        if not task:
-            raise ValueError("Task not found")
         if task_data.name is not None:
             task.name = task_data.name
         if task_data.description is not None:
