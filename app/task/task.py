@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Annotated, List, Optional
-from datetime import datetime, timedelta, timezone
 
 from ..task.service.task_service import TaskService
-from ..project.project_repository import ProjectRepository 
 from ..auth.auth import get_current_user
-from ..user.user_project_association_repo import UserProjectAssociation
-from ..models_db import User as db_user
-from ..models_db import Project as db_project
 from ..database import engine, Sessionlocal
 from .schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskResponseSchema, TaskUpdateRequest
-from .repositories.task_repository import TaskRepository
-from ..user.user_repository import UserRepository
 from pydantic import BaseModel
 
 router = APIRouter(
