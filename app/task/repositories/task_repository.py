@@ -3,10 +3,10 @@ from typing import List, Optional
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload, aliased
 
-from .schemas import TaskCreateRequest, TaskFilters, TaskUpdateRequest
-from .models import Task as db_Task
-from ..models_db import Project, User, UserProjectAssociation
-from ..user.user_repository import UserRepository
+from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskUpdateRequest
+from ..models import Task as db_Task
+from ...models_db import Project, User, UserProjectAssociation
+from ...user.user_repository import UserRepository
 
 User_owner = aliased(User)
 User_performer = aliased(User)
@@ -15,7 +15,7 @@ class TaskRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_task(self, task_id: int) -> db_Task:
+    def get_task(self, task_id: int) -> TaskDetailResponse|None:
         result = (
         self.db.query(
             db_Task,
@@ -33,6 +33,8 @@ class TaskRepository:
         .join(Project, db_Task.project_id == Project.id)  
         .first()
         )
+        if not result:
+            return None
         task, owner_id, owner_email, owner_name, performer_id, performer_email, performer_name, project_name = result
         task.owner_id = owner_id
         task.owner_email = owner_email
@@ -41,8 +43,25 @@ class TaskRepository:
         task.performer_email = performer_email if performer_email else None
         task.performer_name = performer_name if performer_name else None
         task.project_name = project_name
-
-        return task
+        return TaskDetailResponse(
+            id=task.id,
+            name=task.name,
+            status=task.status,
+            indicator=task.indicator,
+            created_at=task.created_at,
+            last_change=task.last_change,
+            deadline=task.deadline,
+            description=task.description,
+            author_id=task.owner_id,
+            author_name=task.owner_name,
+            author_email=task.owner_email,
+            performer_id=task.performer_id,
+            performer_name=task.performer_name,
+            performer_email=task.performer_email,
+            project_id=task.project_id,
+            project_name=task.project_name,
+            parent_task_id=task.parent_task_id
+        )
 
     # def get_user_tasks(self, user_id: str) -> list[db_Task]:
     #     tasks = self.db.query(

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated, Optional
 from datetime import datetime, timedelta, timezone
 
+from ..task.service.task_service import TaskService
 from ..project.project_repository import ProjectRepository 
 from ..auth.auth import get_current_user
 from ..user.user_project_association_repo import UserProjectAssociation
@@ -10,7 +11,7 @@ from ..models_db import User as db_user
 from ..models_db import Project as db_project
 from ..database import engine, Sessionlocal
 from .schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskResponseSchema, TaskUpdateRequest, TasksListResponse
-from .task_repository import TaskRepository
+from .repositories.task_repository import TaskRepository
 from ..user.user_repository import UserRepository
 from pydantic import BaseModel
 
@@ -55,35 +56,19 @@ async def get_tasks_v2(user: user_dependency, db: db_dependency,
 
 @router.get('/{task_id}', response_model=TaskDetailResponse)
 async def get_task(task_id: int, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    task = TaskRepository(db).get_task(task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail='Task not found')   
-    if not UserProjectAssociation(db).check_user_in_project(user['id'], task.project_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Вы не являетесь участником этого проекта")
-    project = ProjectRepository(db).get_project(task.project_id)
-    if project is None:
-        raise HTTPException(status_code=404, detail='Project not found')
-    return TaskDetailResponse(
-        id=task.id,
-        name=task.name,
-        status=task.status,
-        indicator=task.indicator,
-        created_at=task.created_at,
-        last_change=task.last_change,
-        deadline=task.deadline,
-        description=task.description,
-        author_id=task.owner_id,
-        author_name=task.owner_name,
-        author_email=task.owner_email,
-        performer_id=task.performer_id,
-        performer_name=task.performer_name,
-        performer_email=task.performer_email,
-        project_id=task.project_id,
-        project_name=task.project_name,
-        parent_task_id=task.parent_task_id
-    )
+    try:
+        task = TaskService(db).get_task_service(task_id, user['id'])
+        return task
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )     
 
 @router.post('/{project_id}')
 async def create_task(project_id: int, task_data: TaskCreateRequest, user: user_dependency, db: db_dependency):
