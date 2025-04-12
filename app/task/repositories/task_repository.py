@@ -160,7 +160,7 @@ class TaskRepository:
             ) for task in tasks
         ]
     
-    def create_task(self, project_id: int, task_data: TaskCreateRequest, user_id: int) -> db_Task:
+    def create_task(self, project_id: int, task_data: TaskCreateRequest, user_id: int) -> int:
         task = db_Task(
             name=task_data.name,
             description=task_data.description,
@@ -177,15 +177,18 @@ class TaskRepository:
         self.db.refresh(task)
         return task.id
 
-    def update_task(self, task: db_Task, task_data: TaskUpdateRequest) -> db_Task:
+    def update_task(self, task_id: int, task_data: TaskUpdateRequest) -> int:
+        task = self.db.query(db_Task).filter(db_Task.id == task_id).first()
+        if not task:
+            raise ValueError("Task not found")
         if task_data.name is not None:
             task.name = task_data.name
         if task_data.description is not None:
             task.description = task_data.description
         if task_data.deadline is not None:
             task.deadline = task_data.deadline
-        if task_data.performer_email is not None:
-            task.performer_email = task_data.performer_email
+        if task_data.performer_id is not None:
+            task.performer_id = task_data.performer_id
         if task_data.indicator is not None:
             task.indicator = task_data.indicator
         if task_data.status:
@@ -193,7 +196,7 @@ class TaskRepository:
         task.last_change = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(task)
-        return task
+        return task.id
     
     def delete_task(self, task):
         self.db.delete(task)

@@ -5,8 +5,6 @@ from typing import List, Literal, Optional
 from dotenv import load_dotenv
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import Enum
-from ..models_db import User
 
 load_dotenv()
 EMAIL_MASK = os.getenv('LOGIN_MASK')
@@ -33,13 +31,9 @@ class TaskUpdateRequest(BaseModel):
     name: Optional[str] = Field(default=None, max_length=100)
     description: Optional[str] = Field(default=None, max_length=10000) 
     deadline: Optional[datetime] = Field(default=None)
-    performer_email: Optional[str] = Field(default=None)
+    performer_id: Optional[int] = Field(default=None)
     indicator: Optional[IndicatorType] = Field(default=None)
     status: Optional[StatusType] = Field(default=None)
-
-    @field_validator('performer_email')
-    def validate_login_field(cls, value):
-        return validate_login(value)
     
 class TaskResponseSchema(BaseModel):
     name: str

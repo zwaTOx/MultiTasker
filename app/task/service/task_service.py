@@ -7,7 +7,7 @@ from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...task.repositories.task_repository import TaskRepository
 #from models import db_Task
-from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters
+from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskUpdateRequest
 
 class TaskService:
     def __init__(self, db):
@@ -42,4 +42,17 @@ class TaskService:
         if project is None:
             raise ValueError("Project not found")
         task_id = TaskRepository(self.db).create_task(project_id, task_data, user_id)
+        return task_id
+    
+    def update_task_service(self, user_id, task_id: int, task_data: TaskUpdateRequest):
+        task = TaskRepository(self.db).get_task(task_id)
+        if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
+            raise PermissionError("Access denied to task")
+        if task is None:
+            raise ValueError("Task not found")
+        is_task_owner = (task.author_id==user_id)
+        is_project_owner = ProjectRepository(self.db).check_project_owner(user_id, task.project_id)
+        if not (is_task_owner or is_project_owner):
+            raise PermissionError("Insufficient permissions")
+        task_id = TaskRepository(self.db).update_task(task.id, task_data)
         return task_id
