@@ -31,7 +31,7 @@ class TaskService:
         tasks = TaskRepository(self.db).get_accessed_tasks_filter(user_id, filters)
         return tasks
     
-    def create_task_service(self, user_id: int, project_id: int, task_data: TaskCreateRequest):
+    def create_task_service(self, user_id: int, project_id: int, task_data: TaskCreateRequest) -> int:
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
             raise PermissionError("Access denied to project")
         performer_user = UserRepository(self.db).get_user(task_data.performer_id)
@@ -44,15 +44,31 @@ class TaskService:
         task_id = TaskRepository(self.db).create_task(project_id, task_data, user_id)
         return task_id
     
-    def update_task_service(self, user_id, task_id: int, task_data: TaskUpdateRequest):
+    def update_task_service(self, user_id, task_id: int, task_data: TaskUpdateRequest) -> int:
         task = TaskRepository(self.db).get_task(task_id)
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
-            raise PermissionError("Access denied to task")
+            raise PermissionError(f"У вас нет доступа к этому проекту."
+            "Только участники проекта могут удалять его задачи")
         if task is None:
-            raise ValueError("Task not found")
+            raise ValueError(f"Задача с ID {task_id} не найдена в системе")
         is_task_owner = (task.author_id==user_id)
         is_project_owner = ProjectRepository(self.db).check_project_owner(user_id, task.project_id)
         if not (is_task_owner or is_project_owner):
-            raise PermissionError("Insufficient permissions")
+            raise PermissionError("Недостаточно прав для изменения задачи. "
+            "Только владелец задачи или владелец проекта может удалить задачу")
         task_id = TaskRepository(self.db).update_task(task.id, task_data)
         return task_id
+    
+    def delete_task_service(self, user_id: int, task_id: int):
+        task = TaskRepository(self.db).get_task(task_id)
+        if task is None:
+            raise ValueError(f"Задача с ID {task_id} не найдена в системе")
+        if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
+            raise PermissionError(f"У вас нет доступа к этому проекту."
+            "Только участники проекта могут удалять его задачи")
+        is_task_owner = (task.author_id == user_id)
+        is_project_owner = ProjectRepository(self.db).check_project_owner(user_id, task.project_id)
+        if not (is_task_owner or is_project_owner):
+            raise PermissionError("Недостаточно прав для удаления задачи. "
+            "Только владелец задачи или владелец проекта может удалить задачу")
+        TaskRepository(self.db).delete_task(task_id)

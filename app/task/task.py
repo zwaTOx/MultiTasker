@@ -93,19 +93,15 @@ async def update_task(task_id: int, task_data: TaskUpdateRequest, user: user_dep
 
 @router.delete('/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(task_id, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    task = TaskRepository(db).get_task(task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail='Task not found')
-    if not UserProjectAssociation(db).check_user_in_project(user['id'], task.project_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Вы не являетесь участником этого проекта")
-    is_task_owner = (task.owner_id == user['id'])
-    is_project_owner = ProjectRepository(db).check_project_owner(user['id'], task.project_id)
-    if not (is_task_owner or is_project_owner):
+    try: 
+        TaskService(db).delete_task_service(user['id'], task_id)
+    except ValueError as e:
         raise HTTPException(
-            status_code=403,
-            detail="Недостаточно прав для удаления задачи"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    TaskRepository(db).delete_task(task)
-    return {"message": f"Task {task_id} deleted successfully"}
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )    

@@ -198,6 +198,7 @@ class TaskRepository:
         self.db.refresh(task)
         return task.id
     
-    def delete_task(self, task):
+    def delete_task(self, task_id: int):
+        task = self.db.query(db_Task).filter(db_Task.id == task_id).first()
         self.db.delete(task)
         self.db.commit()
