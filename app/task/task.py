@@ -53,22 +53,24 @@ async def get_task(task_id: int, user: user_dependency, db: db_dependency):
         )     
 
 @router.post('/{project_id}')
-async def create_task(project_id: int, task_data: TaskCreateRequest, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Вы не являетесь участником этого проекта")
-    performer_user = db.query(db_user).filter(db_user.id ==task_data.performer_id).first()
-    if performer_user is None:
-        #Отправить письмо на email
-        task_data.performer_id = user['id']
-    project = db.query(db_project).filter(db_project.id==project_id).first()
-    if project is None:
-        raise HTTPException(status_code=404, detail='Project not found')
-    task = TaskRepository(db).create_task(project_id, task_data, user['id'])
-    return {"message": "Task created successfully", 
-            "task_id": task.id}
-
+async def create_task(project_id: int, task_data: TaskCreateRequest, 
+    user: user_dependency, db: db_dependency):
+    try:
+        task_id = TaskService(db).create_task_service(user['id'], project_id, task_data)
+        return {
+            "message": "Task created successfully", 
+            "task_id": task_id
+            }
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )    
 
 @router.put('/{task_id}')
 async def update_task(task_id: int, task_data: TaskUpdateRequest, user: user_dependency, db: db_dependency):

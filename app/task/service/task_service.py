@@ -2,11 +2,12 @@
 from fastapi import Depends, HTTPException, status
 from typing import Optional
 
+from ...user.user_repository import UserRepository
 from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...task.repositories.task_repository import TaskRepository
 #from models import db_Task
-from ..schemas import TaskDetailResponse, TaskFilters
+from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters
 
 class TaskService:
     def __init__(self, db):
@@ -29,3 +30,16 @@ class TaskService:
     def get_tasks_service(self, user_id, filters: TaskFilters = Depends()):
         tasks = TaskRepository(self.db).get_accessed_tasks_filter(user_id, filters)
         return tasks
+    
+    def create_task_service(self, user_id: int, project_id: int, task_data: TaskCreateRequest):
+        if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
+            raise PermissionError("Access denied to project")
+        performer_user = UserRepository(self.db).get_user(task_data.performer_id)
+        if performer_user is None:
+            #Отправить письмо на email
+            task_data.performer_id = user_id
+        project = ProjectRepository(self.db).get_project(project_id)
+        if project is None:
+            raise ValueError("Project not found")
+        task_id = TaskRepository(self.db).create_task(project_id, task_data, user_id)
+        return task_id

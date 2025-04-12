@@ -175,7 +175,7 @@ class TaskRepository:
         self.db.add(task)
         self.db.commit()
         self.db.refresh(task)
-        return task
+        return task.id
 
     def update_task(self, task: db_Task, task_data: TaskUpdateRequest) -> db_Task:
         if task_data.name is not None:
