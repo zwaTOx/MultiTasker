@@ -1,8 +1,10 @@
 from typing import List
 
+from ...user.attachment_repository import AttachmentRepository
+from ...user.user_repository import UserRepository
 from ...project.project_repository import ProjectRepository
-from ...project.models import CreateProjectRequest, MoveProjectRequest
-from ...project.schemas import CreateProjectResponse, MyProjectResponse, ProjectWithMembershipResponse
+from ...project.models import CreateProjectRequest, MoveProjectRequest, UpdateProjectRequest
+from ...project.schemas import ProjectResponse, MyProjectResponse, ProjectWithMembershipResponse
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...category.category_repository import CategoryRepository
 
@@ -37,12 +39,24 @@ class ProjectService:
         return projects
     
     def create_project_service(self, user_id, project_data: CreateProjectRequest, 
-        category_id: int = None) -> CreateProjectResponse:
+        category_id: int = None) -> ProjectResponse:
         if category_id is not None:
             category = CategoryRepository(self.db).get_category(user_id, category_id)
             if category is None:
                 raise ValueError('Category not found')
         project = ProjectRepository(self.db).create_project(project_data.name, user_id)
-        UserProjectAssociation(self.db).create_project(user_id, project.project_id, category_id)
+        UserProjectAssociation(self.db).create_project(user_id, project.id, category_id)
         return project
     
+    def update_project_service(self, user_id: int, project_id: int,
+        project_data: UpdateProjectRequest):
+        is_admin = UserRepository(self.db).check_admin_perms(user_id)
+        if is_admin:
+            project = ProjectRepository(self.db).get_project(project_id)
+        else:
+            project = ProjectRepository(self.db).get_project(project_id, user_id)
+        if project is None:
+            raise ValueError('Project not found')
+        if not AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id):
+            raise ValueError('Attachment not found')
+        ProjectRepository(self.db).update_project(project_id, project_data)

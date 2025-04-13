@@ -17,8 +17,8 @@ class MyProjectResponse(BaseModel):
     icon_id: Optional[int]
     project_created_at: datetime
 
-class CreateProjectResponse(BaseModel):
-    project_id: int
-    project_name: str
+class ProjectResponse(BaseModel):
+    id: int
+    name: str
     icon_id: Optional[int]
-    project_created_at: datetime
+    created_at: datetime

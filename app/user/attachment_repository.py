@@ -49,3 +49,7 @@ class AttachmentRepository:
         project.icon_id = attachment_id
         self.db.commit()
         return True
+
+    def check_attachment_exist(self, attach_id) -> bool:
+        attach = self.db.query(db_Attachment).filter(db_Attachment.id == attach_id).first()
+        return attach is not None

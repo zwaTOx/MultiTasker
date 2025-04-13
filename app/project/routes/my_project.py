@@ -51,24 +51,33 @@ async def create_project(
             
 @router.put('/{project_id}')
 async def update_project(project_id: int, project_data: UpdateProjectRequest, user: user_dependency, db: db_dependency):
-    is_admin = UserRepository(db).check_admin_perms(user['id'])
-    if is_admin:
-        project = db.query(db_project).filter(db_project.id == project_id).first()
-    else:
-        project = db.query(db_project).filter(
-            db_project.id == project_id,
-            db_project.user_id == user['id']
-        ).first()
-    if not project:
-        raise HTTPException(status_code=404, detail='Project not found')
-    if project_data.name is not None:
-        project.name = project_data.name
-    if project_data.icon_id is not None:
-        project.icon_id = project_data.icon_id
-    db.commit()
-    db.refresh(project)
-    return {"message": "Project updated successfully", 
-            "category": {"id": project.id, "name": project.name, "icon_id": project.icon_id}}
+    try:
+        ProjectService(db).update_project_service(user['id'], project_id, project_data)
+        return {'message': 'OK'}
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )    
+
+    # is_admin = UserRepository(db).check_admin_perms(user['id'])
+    # if is_admin:
+    #     project = db.query(db_project).filter(db_project.id == project_id).first()
+    # else:
+    #     project = db.query(db_project).filter(
+    #         db_project.id == project_id,
+    #         db_project.user_id == user['id']
+    #     ).first()
+    # if not project:
+    #     raise HTTPException(status_code=404, detail='Project not found')
+    # if project_data.name is not None:
+    #     project.name = project_data.name
+    # if project_data.icon_id is not None:
+    #     project.icon_id = project_data.icon_id
+    # db.commit()
+    # db.refresh(project)
+    # return {"message": "Project updated successfully", 
+    #         "category": {"id": project.id, "name": project.name, "icon_id": project.icon_id}}
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(project_id, user: user_dependency, db: db_dependency):
