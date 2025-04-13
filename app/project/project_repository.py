@@ -1,7 +1,7 @@
 from operator import and_
 from sqlalchemy.orm import Session
 
-from ..project.schemas import MyProjectResponse
+from ..project.schemas import CreateProjectResponse, MyProjectResponse
 from ..models_db import Project as db_project, UserProjectAssociation
 from ..user.user_repository import UserRepository
 
@@ -28,7 +28,12 @@ class ProjectRepository:
         )
         self.db.add(project)
         self.db.commit()
-        return project
+        return CreateProjectResponse(
+            project_id=project.id,
+            project_name=project.name,
+            icon_id=project.icon_id,
+            project_created_at=project.created_at
+        )
     
     def get_project(self, project_id: int):
         project = self.db.query(db_project).filter(

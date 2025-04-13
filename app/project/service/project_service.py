@@ -2,7 +2,7 @@ from typing import List
 
 from ...project.project_repository import ProjectRepository
 from ...project.models import CreateProjectRequest, MoveProjectRequest
-from ...project.schemas import MyProjectResponse, ProjectWithMembershipResponse
+from ...project.schemas import CreateProjectResponse, MyProjectResponse, ProjectWithMembershipResponse
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...category.category_repository import CategoryRepository
 
@@ -37,11 +37,12 @@ class ProjectService:
         return projects
     
     def create_project_service(self, user_id, project_data: CreateProjectRequest, 
-        category_id: int = None):
+        category_id: int = None) -> CreateProjectResponse:
         if category_id is not None:
             category = CategoryRepository(self.db).get_category(user_id, category_id)
             if category is None:
                 raise ValueError('Category not found')
         project = ProjectRepository(self.db).create_project(project_data.name, user_id)
-        UserProjectAssociation(self.db).create_project(user_id, project.id, category_id)
+        UserProjectAssociation(self.db).create_project(user_id, project.project_id, category_id)
         return project
+    

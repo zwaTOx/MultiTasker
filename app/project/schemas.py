@@ -16,3 +16,9 @@ class MyProjectResponse(BaseModel):
     category_id: Optional[int] = None
     icon_id: Optional[int]
     project_created_at: datetime
+
+class CreateProjectResponse(BaseModel):
+    project_id: int
+    project_name: str
+    icon_id: Optional[int]
+    project_created_at: datetime

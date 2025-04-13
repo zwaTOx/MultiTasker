@@ -42,7 +42,7 @@ async def create_project(
     try:
         project = ProjectService(db).create_project_service(user['id'], project_data, category_id)
         return {"message": "Project created successfully", 
-            "project_id": project.id}
+            "project_id": project.project_id}
     except ValueError as e:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, 
