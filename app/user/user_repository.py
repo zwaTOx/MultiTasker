@@ -12,7 +12,9 @@ class UserRepository:
         return UserResponse(
             id = user.id,
             login=user.login,
-            username=user.username
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified
         )
     
     def get_users(self):
