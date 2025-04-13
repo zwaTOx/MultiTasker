@@ -4,10 +4,7 @@ from typing import Annotated, List
 
 from ...project.schemas import ProjectWithMembershipResponse
 from ...project.service.project_service import ProjectService
-from ..project_repository import ProjectRepository
-from ...user.user_project_association_repo import UserProjectAssociation
 from ...auth.auth import get_current_user
-from ...models_db import Category as db_category
 from ...database import engine, Sessionlocal
 from ..models import MoveProjectRequest
 
