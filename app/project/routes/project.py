@@ -6,7 +6,7 @@ from ...project.schemas import ProjectWithMembershipResponse
 from ...project.service.project_service import ProjectService
 from ...auth.auth import get_current_user
 from ...database import engine, Sessionlocal
-from ..models import MoveProjectRequest
+from ..schemas import MoveProjectRequest
 
 router = APIRouter(
     prefix="/projects",

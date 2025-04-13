@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class ProjectWithMembershipResponse(BaseModel):
     project_id: int
@@ -22,3 +22,13 @@ class ProjectResponse(BaseModel):
     name: str
     icon_id: Optional[int]
     created_at: datetime
+
+class CreateProjectRequest(BaseModel):
+    name: str = Field(max_length=100) 
+
+class UpdateProjectRequest(BaseModel):
+    name: Optional[str] = Field(default=None) 
+    icon_id: Optional[int] = Field(default=None) 
+
+class MoveProjectRequest(BaseModel):
+    category_id: Optional[int] = None

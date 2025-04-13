@@ -11,7 +11,7 @@ from ...auth.auth import get_current_user
 from ...models_db import Project as db_project
 from ...models_db import Category as db_category
 from ...database import engine, Sessionlocal
-from ..models import CreateProjectRequest, UpdateProjectRequest
+from ..schemas import CreateProjectRequest, UpdateProjectRequest
 
 router = APIRouter(
     prefix="/my/projects",
@@ -42,7 +42,7 @@ async def create_project(
     try:
         project = ProjectService(db).create_project_service(user['id'], project_data, category_id)
         return {"message": "Project created successfully", 
-            "project_id": project.project_id}
+            "project_id": project.id}
     except ValueError as e:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, 
