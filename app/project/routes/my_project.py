@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, List
 
+from ...project.schemas import MyProjectResponse
+from ...project.service.project_service import ProjectService
 from ...user.user_repository import UserRepository
-
 from ..project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...auth.auth import get_current_user
@@ -27,12 +28,10 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.get('/')
+@router.get('/', response_model=List[MyProjectResponse])
 async def get_my_projects(user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    projects = db.query(db_project).filter(db_project.user_id==user['id']).all()
-    return {'projects': projects}
+    projects = ProjectService(db).get_my_projects_service(user['id'])
+    return projects
 
 @router.post('/')
 async def create_project(

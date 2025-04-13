@@ -31,3 +31,7 @@ class ProjectService:
             raise PermissionError('You are not a member of this project')
         if not UserProjectAssociation(self.db).change_project_category(user_id, project_id, request.category_id):
             raise RuntimeError('Failed to change category')
+        
+    def get_my_projects_service(self, user_id: int):
+        projects = ProjectRepository(self.db).get_my_projects(user_id)
+        return projects

@@ -1,5 +1,8 @@
+from operator import and_
 from sqlalchemy.orm import Session
-from ..models_db import Project as db_project
+
+from ..project.schemas import MyProjectResponse
+from ..models_db import Project as db_project, UserProjectAssociation
 from ..user.user_repository import UserRepository
 
 class ProjectRepository:
@@ -32,3 +35,30 @@ class ProjectRepository:
             db_project.id==project_id
         ).first()
         return project
+    
+    def get_my_projects(self, user_id: int):
+        projects = (
+        self.db.query(
+            db_project,
+            UserProjectAssociation.category_id
+        )
+        .outerjoin(  
+            UserProjectAssociation,
+            and_(
+                UserProjectAssociation.project_id == db_project.id,
+                UserProjectAssociation.user_id == user_id
+            )
+        )
+        .filter(
+            db_project.user_id == user_id  
+        )
+        .all()
+        )
+        print(projects)
+        return [MyProjectResponse(
+            project_id=project.id,
+            project_name=project.name,
+            category_id=category_id,
+            icon_id=project.icon_id,
+            project_created_at=project.created_at
+        ) for project, category_id in projects]
