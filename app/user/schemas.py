@@ -72,7 +72,7 @@ class UserResponse(BaseModel):
     id: int
     login: str
     username: Optional[str]
-    icon_id: int
+    icon_id: Optional[str]
     is_verified: bool
 
 class ProjectUserResponse(BaseModel):

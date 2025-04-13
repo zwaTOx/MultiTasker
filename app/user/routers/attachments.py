@@ -66,54 +66,12 @@ async def get_icon(
             detail="Должен быть указан ровно один параметр: user_id ИЛИ project_id"
         )
     if project_id is not None:
-        project = ProjectRepository(db).get_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-        if project.icon_id is None:
-            return get_default_project_icon()
-        attachment = AttachmentRepository(db).get_attachment_by_id(project.icon_id)
-        if not attachment:
-            raise HTTPException(status_code=404, detail="Project attachment not found")
-        file_path = os.path.join(UPLOAD_DIRECTORY, attachment.path)
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="Project icon file not found")
-        return FileResponse(file_path)
-
-    #user_id
-    target_user_id = user_id if user_id is not None else user['id']
-    founded_user = UserRepository(db).get_user(target_user_id)
-    if not founded_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if founded_user.icon_id is None:
-        base_dir = os.path.dirname(UPLOAD_DIRECTORY)
-        default_icon_path = os.path.join(base_dir, "defaults", DEFAULT_USER_ICON)
-        if not os.path.exists(default_icon_path):
-            raise HTTPException(status_code=404, detail="Default icon not found")
-        return FileResponse(default_icon_path)
-
-    attachment = AttachmentRepository(db).get_attachment_by_id(founded_user.icon_id)
-    if not attachment:
-        raise HTTPException(status_code=404, detail="Attachment not found")
-    file_path = os.path.join(UPLOAD_DIRECTORY, attachment.path)
+        file_path = AttachmentService(db).get_project_icon(project_id)
+    else:
+        file_path = AttachmentService(db).get_user_icon(user_id)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Icon file not found on server")
-
     return FileResponse(file_path)
-
-def get_default_user_icon():
-    base_dir = os.path.dirname(UPLOAD_DIRECTORY)
-    default_icon_path = os.path.join(base_dir, "defaults", DEFAULT_USER_ICON)
-    if not os.path.exists(default_icon_path):
-        raise HTTPException(status_code=404, detail="Default user icon not found")
-    return FileResponse(default_icon_path)
-
-def get_default_project_icon():
-    base_dir = os.path.dirname(UPLOAD_DIRECTORY)
-    default_icon_path = os.path.join(base_dir, "defaults", DEFAULT_PROJECT_ICON)
-    if not os.path.exists(default_icon_path):
-        raise HTTPException(status_code=404, detail="Default project icon not found")
-    return FileResponse(default_icon_path)
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_icon(

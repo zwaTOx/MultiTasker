@@ -1,6 +1,8 @@
 
 from fastapi import HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
+from ...project.project_repository import ProjectRepository
 from ...user.attachment_repository import AttachmentRepository
 from ...user.user_repository import UserRepository
 import os
@@ -42,3 +44,39 @@ class AttachmentService:
         attachment = AttachmentRepository(self.db).add_attachment(filename)
         print(type(attachment.id))
         return attachment.id
+
+    def get_user_icon(self, user_id):
+        founded_user = UserRepository(self.db).get_user(user_id)
+        if not founded_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        if founded_user.icon_id is None:
+            return self.get_default_user_icon()
+        attachment = AttachmentRepository(self.db).get_attachment_by_id(founded_user.icon_id)
+        if not attachment:
+            raise HTTPException(status_code=404, detail="Attachment not found")
+        return os.path.join(UPLOAD_DIRECTORY, attachment.path)
+
+    def get_project_icon(self, project_id):
+        project = ProjectRepository(self.db).get_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        if project.icon_id is None:
+            return self.get_default_project_icon()
+        attachment = AttachmentRepository(self.db).get_attachment_by_id(project.icon_id)
+        if not attachment:
+            raise HTTPException(status_code=404, detail="Project attachment not found")
+        return os.path.join(UPLOAD_DIRECTORY, attachment.path)
+    
+    def get_default_user_icon(self):
+        base_dir = os.path.dirname(UPLOAD_DIRECTORY)
+        default_icon_path = os.path.join(base_dir, "defaults", DEFAULT_USER_ICON)
+        if not os.path.exists(default_icon_path):
+            raise HTTPException(status_code=404, detail="Default user icon not found")
+        return default_icon_path
+
+    def get_default_project_icon(self):
+        base_dir = os.path.dirname(UPLOAD_DIRECTORY)
+        default_icon_path = os.path.join(base_dir, "defaults", DEFAULT_PROJECT_ICON)
+        if not os.path.exists(default_icon_path):
+            raise HTTPException(status_code=404, detail="Default project icon not found")
+        return default_icon_path

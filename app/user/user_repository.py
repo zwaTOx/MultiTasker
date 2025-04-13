@@ -7,8 +7,10 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_user(self, user_id: int) -> UserResponse:
+    def get_user(self, user_id: int) -> UserResponse|None:
         user = self.db.query(db_User).filter(db_User.id==user_id).first()
+        if user is None:
+            return None
         return UserResponse(
             id = user.id,
             login=user.login,
