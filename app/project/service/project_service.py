@@ -3,7 +3,7 @@ from typing import List
 from ...user.attachment_repository import AttachmentRepository
 from ...user.user_repository import UserRepository
 from ...project.project_repository import ProjectRepository
-from ...project.models import CreateProjectRequest, MoveProjectRequest, UpdateProjectRequest
+from ...project.schemas import CreateProjectRequest, MoveProjectRequest, UpdateProjectRequest
 from ...project.schemas import ProjectResponse, MyProjectResponse, ProjectWithMembershipResponse
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...category.category_repository import CategoryRepository

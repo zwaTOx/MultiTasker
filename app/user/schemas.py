@@ -77,3 +77,7 @@ class ProjectUserResponse(BaseModel):
     user_id: int
     username: Optional[str] = None
     login: str
+
+class AttachmentResponse(BaseModel):
+    id: int
+    path: str

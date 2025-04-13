@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated
 
+from ...user.service.attachment_service import AttachmentService
 from ..user_repository import UserRepository
 from ..attachment_repository import AttachmentRepository
 from ...database import engine, Sessionlocal
@@ -34,32 +35,17 @@ MAX_FILE_SIZE = 50 * 1024 * 1024
 
 @router.post('/')
 async def post_attachment(uploaded_file: UploadFile, user: user_dependency, db: db_dependency):
-    founded_user = UserRepository(db).get_user(user['id'])
-    if founded_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    file = uploaded_file.file
-    filename = str(uuid.uuid4()) + os.path.splitext(uploaded_file.filename)[1]
-    file_path = os.path.join(UPLOAD_DIRECTORY, filename)
-    content_type = uploaded_file.content_type
-    file_size = 0
-    for chunk in uploaded_file.file:
-        file_size += len(chunk)
-        if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail=f"Файл слишком большой. Максимальный размер: {MAX_FILE_SIZE//(1024*1024)} МБ"
-            )
-    uploaded_file.file.seek(0)
-    if content_type not in ALLOWED_MIME_TYPES:
+    try:
+        attachment_id = AttachmentService(db).post_attachment_service(user['id'], uploaded_file)
+        return {"message": "Файл успено загружен",
+             "attachment_id": attachment_id}
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
         raise HTTPException(
-            status_code=400,
-            detail="Недопустимый формат файла. Разрешены только JPEG и PNG"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    with open(file_path, 'wb') as f:
-        f.write(file.read())
-    attachment = AttachmentRepository(db).add_attachment(filename)
-    return {"message": "Файл успено загружен",
-            "attachment_id": attachment.id}
 
 @router.get('/icon', response_class=FileResponse)
 async def get_icon(

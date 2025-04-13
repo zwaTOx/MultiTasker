@@ -1,13 +1,19 @@
 from sqlalchemy.orm import Session
+
+from ..user.schemas import UserResponse
 from ..models_db import User as db_User
 
 class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_user(self, user_id: int):
+    def get_user(self, user_id: int) -> UserResponse:
         user = self.db.query(db_User).filter(db_User.id==user_id).first()
-        return user
+        return UserResponse(
+            id = user.id,
+            login=user.login,
+            username=user.username
+        )
     
     def get_users(self):
         users = self.db.query(db_User.id, db_User.login, db_User.username).all()

@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from ..user.attachment_repository import AttachmentRepository
-from ..project.models import UpdateProjectRequest
+from ..project.schemas import UpdateProjectRequest
 from ..project.schemas import ProjectResponse, MyProjectResponse
 from ..models_db import Project as db_project, UserProjectAssociation
 from ..user.user_repository import UserRepository

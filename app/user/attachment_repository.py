@@ -1,7 +1,8 @@
 import os
 from sqlalchemy.orm import Session
 
-from app.database import Sessionlocal
+from ..user.schemas import AttachmentResponse
+from ..database import Sessionlocal
 from ..models_db import Attachment as db_Attachment
 from ..models_db import User as db_User
 from ..models_db import Project as db_Project
@@ -12,12 +13,15 @@ class AttachmentRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def add_attachment(self, path: str) -> db_Attachment:
+    def add_attachment(self, path: str) -> AttachmentResponse:
         new_attachment = db_Attachment(path=path)
         self.db.add(new_attachment)
         self.db.commit()
         self.db.refresh(new_attachment)
-        return new_attachment
+        return AttachmentResponse(
+            id = new_attachment.id,
+            path = new_attachment.path
+        )
     
     def get_attachment_by_id(self, attachment_id: int) -> db_Attachment:
         return self.db.query(db_Attachment).filter(db_Attachment.id == attachment_id).first()
