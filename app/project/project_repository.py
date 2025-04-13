@@ -2,6 +2,7 @@ from operator import and_
 from typing import List
 from sqlalchemy.orm import Session
 
+from ..user.attachment_repository import AttachmentRepository
 from ..project.models import UpdateProjectRequest
 from ..project.schemas import ProjectResponse, MyProjectResponse
 from ..models_db import Project as db_project, UserProjectAssociation
@@ -82,6 +83,8 @@ class ProjectRepository:
         if project_data.name is not None:
             project.name = project_data.name
         if project_data.icon_id is not None:
-            project.icon_id = project_data.icon_id #проверить что он существует 
+            if not AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id):
+                raise ValueError('Attachment not found')
+            project.icon_id = project_data.icon_id 
         self.db.commit()
         self.db.refresh(project)

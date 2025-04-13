@@ -57,6 +57,4 @@ class ProjectService:
             project = ProjectRepository(self.db).get_project(project_id, user_id)
         if project is None:
             raise ValueError('Project not found')
-        if not AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id):
-            raise ValueError('Attachment not found')
         ProjectRepository(self.db).update_project(project_id, project_data)
