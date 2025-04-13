@@ -58,3 +58,8 @@ class ProjectService:
         if project is None:
             raise ValueError('Project not found')
         ProjectRepository(self.db).update_project(project_id, project_data)
+
+    def delete_project_service(self, user_id: int, project_id: int):
+        is_admin = UserRepository(self.db).check_admin_perms(user_id)
+        ProjectRepository(self.db).delete_project(user_id, project_id, is_admin)
+        

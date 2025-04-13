@@ -88,3 +88,17 @@ class ProjectRepository:
             project.icon_id = project_data.icon_id 
         self.db.commit()
         self.db.refresh(project)
+
+    def delete_project(self, user_id: int, project_id: int, is_admin: bool = False) -> bool:
+        if is_admin:
+            project = self.db.query(db_project).filter(db_project.id == project_id).first()
+        else:
+            project = self.db.query(db_project).filter(
+                db_project.id == project_id,
+                db_project.user_id == user_id
+            ).first()
+        if project is None:
+            raise ValueError('Project not found')
+        self.db.delete(project)
+        self.db.commit()
+        
