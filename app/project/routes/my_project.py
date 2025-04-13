@@ -39,14 +39,15 @@ async def create_project(
         user: user_dependency, 
         db: db_dependency,
         category_id: int = Query(None)):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
-    category = db.query(db_category).filter(db_category.id==category_id,
-        db_category.user_id==user['id']).first()
-    project = ProjectRepository(db).create_project(project_data.name, user['id'])
-    UserProjectAssociation(db).create_project(user['id'], project.id, category_id)
-    return {"message": "Project created successfully", 
+    try:
+        project = ProjectService(db).create_project_service(user['id'], project_data, category_id)
+        return {"message": "Project created successfully", 
             "project_id": project.id}
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )    
             
 @router.put('/{project_id}')
 async def update_project(project_id: int, project_data: UpdateProjectRequest, user: user_dependency, db: db_dependency):

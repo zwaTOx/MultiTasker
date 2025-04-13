@@ -1,8 +1,8 @@
 from typing import List
 
 from ...project.project_repository import ProjectRepository
-from ...project.models import MoveProjectRequest
-from ...project.schemas import ProjectWithMembershipResponse
+from ...project.models import CreateProjectRequest, MoveProjectRequest
+from ...project.schemas import MyProjectResponse, ProjectWithMembershipResponse
 from ...user.user_project_association_repo import UserProjectAssociation
 from ...category.category_repository import CategoryRepository
 
@@ -32,6 +32,16 @@ class ProjectService:
         if not UserProjectAssociation(self.db).change_project_category(user_id, project_id, request.category_id):
             raise RuntimeError('Failed to change category')
         
-    def get_my_projects_service(self, user_id: int):
+    def get_my_projects_service(self, user_id: int) -> List[MyProjectResponse]:
         projects = ProjectRepository(self.db).get_my_projects(user_id)
         return projects
+    
+    def create_project_service(self, user_id, project_data: CreateProjectRequest, 
+        category_id: int = None):
+        if category_id is not None:
+            category = CategoryRepository(self.db).get_category(user_id, category_id)
+            if category is None:
+                raise ValueError('Category not found')
+        project = ProjectRepository(self.db).create_project(project_data.name, user_id)
+        UserProjectAssociation(self.db).create_project(user_id, project.id, category_id)
+        return project
