@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated, List, Optional
 
+from ...user.service.user_service import UserService
 from ...notification.notification_repository import NotificationRepository
 from ...user.schemas import UserResponse
 from ...models_db import Project
@@ -36,26 +37,35 @@ async def get_users(
     db: db_dependency,
     project_id: Optional[int] = Query(None)
 ):
-    if project_id is not None:
-        if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
-            raise HTTPException(status_code=403, detail="Доступ запрещен")
-        project = ProjectRepository(db).get_project(project_id) 
-        if project is None:
-            raise HTTPException(status_code=404, detail="Проект не найден")
-        users = UserProjectAssociation(db).get_users_in_project(project_id)
-    else:
-        users = UserRepository(db).get_users()
+    try:
+        UserService(db).get_users_service(user['id'], project_id)
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+    # if project_id is not None:
+    #     if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
+    #         raise HTTPException(status_code=403, detail="Доступ запрещен")
+    #     project = ProjectRepository(db).get_project(project_id) 
+    #     if project is None:
+    #         raise HTTPException(status_code=404, detail="Проект не найден")
+    #     users = UserProjectAssociation(db).get_users_in_project(project_id)
+    # else:
+    #     users = UserRepository(db).get_users()
 
-    if not users:
-        return []
-    # result = []
-    # for user in users:
-    #     user_data = user._asdict()
-    #     if 'user_id' in user_data:
-    #         user_data['id'] = user_data.pop('user_id')  
-    #     result.append(UserResponse(**user_data))
-    return users
-    # return result
+    # if not users:
+    #     return []
+    # # result = []
+    # # for user in users:
+    # #     user_data = user._asdict()
+    # #     if 'user_id' in user_data:
+    # #         user_data['id'] = user_data.pop('user_id')  
+    # #     result.append(UserResponse(**user_data))
+    # return users
+    # # return result
 @router.post('/users/{user_id}/invite')
 def invite_in_project(request: Request,  
         project_id: int, 

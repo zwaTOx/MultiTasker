@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import literal
 from sqlalchemy.orm import Session
 
+from ..user.schemas import UserResponse
 from ..project.schemas import ProjectWithMembershipResponse
 from ..task.schemas import TaskFilters
 from ..models_db import UserProjectAssociation as db_UPA
@@ -44,17 +45,25 @@ class UserProjectAssociation:
         self.db.delete(project_user_assoc)
         self.db.commit()
     
-    def get_users_in_project(self, project_id):
+    def get_users_in_project(self, project_id) -> List[UserResponse]:
         users = self.db.query(
             db_UPA.user_id,
             db_user.username,
-            db_user.login
+            db_user.login,
+            db_user.icon_id,
+            db_user.is_verified
         ).join(
             db_user, db_UPA.user_id == db_user.id
         ).filter(
             db_UPA.project_id==project_id
         ).all()
-        return users
+        return [UserResponse(
+            id=user.user_id,
+            login=user.login,
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified
+        ) for user in users]
 
     def get_accessed_projects(self, user_id: int) -> List[Dict[str, Any]]:
         if not UserRepository(self.db).check_admin_perms(user_id):
