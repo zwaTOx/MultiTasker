@@ -65,10 +65,16 @@ async def get_icon(
             status_code=400,
             detail="Должен быть указан ровно один параметр: user_id ИЛИ project_id"
         )
-    if project_id is not None:
-        file_path = AttachmentService(db).get_project_icon(project_id)
-    else:
-        file_path = AttachmentService(db).get_user_icon(user_id)
+    try:
+        if project_id is not None:
+            file_path = AttachmentService(db).get_project_icon(project_id)
+        else:
+            if user_id is None:
+                file_path = AttachmentService(db).get_user_icon(user_id)
+            else: 
+                file_path = AttachmentService(db).get_user_icon(user['id'])
+    except HTTPException as e:
+        raise e
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Icon file not found on server")
     return FileResponse(file_path)
@@ -79,29 +85,38 @@ async def delete_icon(
     db: db_dependency,
     project_id: int = Query(None, description="ID проекта")
 ):
-    if project_id is not None:
-        project = ProjectRepository(db).get_project(project_id)
-        if project is None:
-            raise HTTPException(status_code=404, detail="Project not found")
-        if project.user_id != user['id']:
-            raise HTTPException(status_code=403, detail="Access Denied")
-        if project.icon_id is None:
-            raise HTTPException(status_code=404, detail="Project icon not found")
-        attachment = AttachmentRepository(db).get_attachment_by_id(project.icon_id)
-        if attachment is None:
-            raise HTTPException(status_code=404, detail="Attachment not found")
-        if not AttachmentRepository(db).delete_attachment(attachment_id=project.icon_id):
-            raise HTTPException(status_code=404, detail="Failed to delete attachment")
-        return
-    founded_user = UserRepository(db).get_user(user['id'])
-    if not founded_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if founded_user.icon_id is None:
-        raise HTTPException(status_code=404, detail="User icon not found")
-    attachment = AttachmentRepository(db).get_attachment_by_id(founded_user.icon_id)
-    if attachment is None:
-        raise HTTPException(status_code=404, detail="Attachment not found")
-    if not AttachmentRepository(db).delete_attachment(attachment.id):
-        raise HTTPException(status_code=404, detail="Failed to delete attachment")
-    return
+    try:
+        AttachmentService(db).delete_icon(user['id'], project_id)
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+    # if project_id is not None:
+    #     project = ProjectRepository(db).get_project(project_id)
+    #     if project is None:
+    #         raise HTTPException(status_code=404, detail="Project not found")
+    #     if project.user_id != user['id']:
+    #         raise HTTPException(status_code=403, detail="Access Denied")
+    #     if project.icon_id is None:
+    #         raise HTTPException(status_code=404, detail="Project icon not found")
+    #     attachment = AttachmentRepository(db).get_attachment_by_id(project.icon_id)
+    #     if attachment is None:
+    #         raise HTTPException(status_code=404, detail="Attachment not found")
+    #     if not AttachmentRepository(db).delete_attachment(attachment_id=project.icon_id):
+    #         raise HTTPException(status_code=404, detail="Failed to delete attachment")
+    #     return
+    # founded_user = UserRepository(db).get_user(user['id'])
+    # if not founded_user:
+    #     raise HTTPException(status_code=404, detail="User not found")
+    # if founded_user.icon_id is None:
+    #     raise HTTPException(status_code=404, detail="User icon not found")
+    # attachment = AttachmentRepository(db).get_attachment_by_id(founded_user.icon_id)
+    # if attachment is None:
+    #     raise HTTPException(status_code=404, detail="Attachment not found")
+    # if not AttachmentRepository(db).delete_attachment(attachment.id):
+    #     raise HTTPException(status_code=404, detail="Failed to delete attachment")
+    # return
         

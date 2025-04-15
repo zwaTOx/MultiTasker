@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.orm import Session
 
 from ..user.schemas import UserResponse
@@ -19,9 +20,15 @@ class UserRepository:
             is_verified=user.is_verified
         )
     
-    def get_users(self):
-        users = self.db.query(db_User.id, db_User.login, db_User.username).all()
-        return users
+    def get_users(self) -> List[UserResponse]:
+        users = self.db.query(db_User).all()
+        return [UserResponse(
+            id=user.id,
+            login=user.login,
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified
+        ) for user in users]
     
     def get_user_by_email(self, email: str):
         user = self.db.query(db_User).filter(db_User.login==email).first()

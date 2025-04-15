@@ -45,16 +45,17 @@ async def get_users(
         users = UserProjectAssociation(db).get_users_in_project(project_id)
     else:
         users = UserRepository(db).get_users()
+
     if not users:
         return []
-    result = []
-    for user in users:
-        user_data = user._asdict()
-        if 'user_id' in user_data:
-            user_data['id'] = user_data.pop('user_id')  
-        result.append(UserResponse(**user_data))
-    
-    return result
+    # result = []
+    # for user in users:
+    #     user_data = user._asdict()
+    #     if 'user_id' in user_data:
+    #         user_data['id'] = user_data.pop('user_id')  
+    #     result.append(UserResponse(**user_data))
+    return users
+    # return result
 @router.post('/users/{user_id}/invite')
 def invite_in_project(request: Request,  
         project_id: int, 

@@ -22,6 +22,7 @@ class ProjectResponse(BaseModel):
     name: str
     icon_id: Optional[int]
     created_at: datetime
+    owner_id: int
 
 class CreateProjectRequest(BaseModel):
     name: str = Field(max_length=100) 

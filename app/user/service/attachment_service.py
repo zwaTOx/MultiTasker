@@ -80,3 +80,30 @@ class AttachmentService:
         if not os.path.exists(default_icon_path):
             raise HTTPException(status_code=404, detail="Default project icon not found")
         return default_icon_path
+    
+    def delete_icon(self, user_id: int, project_id: int):
+        if project_id is not None:
+            project = ProjectRepository(self.db).get_project(project_id)
+            if project is None:
+                raise ValueError("Project not found")
+            if project.owner_id != user_id:
+                raise HTTPException(status_code=403, detail="Access Denied")
+            if project.icon_id is None:
+                raise ValueError("Project icon not found")
+            attachment = AttachmentRepository(self.db).get_attachment_by_id(project.icon_id)
+            if attachment is None:
+                raise ValueError("Attachment not found")
+            if not AttachmentRepository(self.db).delete_attachment(attachment_id=project.icon_id):
+                raise HTTPException(status_code=500, detail="Failed to delete attachment")
+            return
+        founded_user = UserRepository(self.db).get_user(user_id)
+        if not founded_user:
+            raise ValueError("User not found")
+        if founded_user.icon_id is None:
+            raise ValueError("User icon not found")
+        attachment = AttachmentRepository(self.db).get_attachment_by_id(founded_user.icon_id)
+        if attachment is None:
+            raise ValueError("Attachment not found")
+        if not AttachmentRepository(self.db).delete_attachment(attachment.id):
+            raise HTTPException(status_code=500, detail="Failed to delete attachment")
+        return

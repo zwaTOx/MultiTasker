@@ -71,9 +71,9 @@ class UpdateUserRequest(BaseModel):
 class UserResponse(BaseModel):
     id: int
     login: str
-    username: Optional[str]
-    icon_id: Optional[str]
-    is_verified: bool
+    username: Optional[str] = Field(default = None)  
+    icon_id: Optional[int] = Field(default = None)  
+    is_verified: bool  = Field(default = True)  
 
 class ProjectUserResponse(BaseModel):
     user_id: int
