@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated
 
+from ...user.service.prrofile_service import ProfileService
 from ..schemas import ChangePasswordRequest, ChangeEmailRequest, UpdateUserRequest
 from ...models_db import User
 from ..user_repository import UserRepository
@@ -35,38 +36,45 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.put('/me')
 async def update_user(user_data: UpdateUserRequest, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Auth Failed")
-    founded_user = UserRepository(db).get_user(user['id'])
-    if not founded_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    updated_fields = []
-    if user_data.attachment_id is not None:
-        founded_user.icon_id = user_data.attachment_id
-        updated_fields.append("icon_id")
-    if user_data.new_username is not None:
-        founded_user.username = user_data.new_username
-        updated_fields.append("username")
-    if user_data.new_email is not None:
-        founded_user.login = user_data.new_email
-        updated_fields.append("email")
-    if all([user_data.old_password, user_data.new_password, user_data.confirm_password]):
-        if not bcrypt_context.verify(user_data.old_password, founded_user.hashed_password):
-            raise HTTPException(status_code=400, detail="Старый пароль неверен")
-        if user_data.new_password != user_data.confirm_password:
-            raise HTTPException(status_code=400, detail="Новый пароль и подтверждение пароля не совпадают")
-        founded_user.hashed_password = bcrypt_context.hash(user_data.new_password)
-        updated_fields.append("password")
-    if not updated_fields:
+    try:
+        ProfileService(db).update_profile(user['id'], user_data)
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
         raise HTTPException(
-            status_code=400,
-            detail="Не указаны данные для обновления"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    db.commit()
-    db.refresh(founded_user)
+    # founded_user = UserRepository(db).get_user(user['id'])
+    # if not founded_user:
+    #     raise HTTPException(status_code=404, detail="User not found")
+    # updated_fields = []
+    # if user_data.attachment_id is not None:
+    #     founded_user.icon_id = user_data.attachment_id
+    #     updated_fields.append("icon_id")
+    # if user_data.new_username is not None:
+    #     founded_user.username = user_data.new_username
+    #     updated_fields.append("username")
+    # if user_data.new_email is not None:
+    #     founded_user.login = user_data.new_email
+    #     updated_fields.append("email")
+    # if all([user_data.old_password, user_data.new_password, user_data.confirm_password]):
+    #     if not bcrypt_context.verify(user_data.old_password, founded_user.hashed_password):
+    #         raise HTTPException(status_code=400, detail="Старый пароль неверен")
+    #     if user_data.new_password != user_data.confirm_password:
+    #         raise HTTPException(status_code=400, detail="Новый пароль и подтверждение пароля не совпадают")
+    #     founded_user.hashed_password = bcrypt_context.hash(user_data.new_password)
+    #     updated_fields.append("password")
+    # if not updated_fields:
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail="Не указаны данные для обновления"
+    #     )
+    # db.commit()
+    # db.refresh(founded_user)
     return {
         "message": "Данные пользователя обновлены",
-        "updated_fields": updated_fields
+        # "updated_fields": updated_fields
     }
         
 

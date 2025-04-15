@@ -9,7 +9,7 @@ from ...user.service.attachment_service import AttachmentService
 from ..user_repository import UserRepository
 from ..attachment_repository import AttachmentRepository
 from ...database import engine, Sessionlocal
-from ...auth.auth import get_current_user, bcrypt_context
+from ...auth.auth import get_current_user
 from ...project.project_repository import ProjectRepository
 
 router = APIRouter(
