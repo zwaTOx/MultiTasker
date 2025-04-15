@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from ...project.project_repository import ProjectRepository
@@ -22,3 +22,13 @@ class UserService:
         else:
             users = UserRepository(self.db).get_users()
         return users
+    
+    def leave_project(self, user_id: int, project_id: int):
+        if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Пользователь не является участником проекта"
+            )
+        if not ProjectRepository(self.db).check_project_existing(project_id):
+            raise ValueError('Project not found')
+        UserProjectAssociation(self.db).leave_project(user_id, project_id)

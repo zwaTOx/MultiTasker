@@ -46,26 +46,7 @@ async def get_users(
             status.HTTP_404_NOT_FOUND, 
             detail=str(e)
         )
-    # if project_id is not None:
-    #     if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
-    #         raise HTTPException(status_code=403, detail="Доступ запрещен")
-    #     project = ProjectRepository(db).get_project(project_id) 
-    #     if project is None:
-    #         raise HTTPException(status_code=404, detail="Проект не найден")
-    #     users = UserProjectAssociation(db).get_users_in_project(project_id)
-    # else:
-    #     users = UserRepository(db).get_users()
 
-    # if not users:
-    #     return []
-    # # result = []
-    # # for user in users:
-    # #     user_data = user._asdict()
-    # #     if 'user_id' in user_data:
-    # #         user_data['id'] = user_data.pop('user_id')  
-    # #     result.append(UserResponse(**user_data))
-    # return users
-    # # return result
 @router.post('/users/{user_id}/invite')
 def invite_in_project(request: Request,  
         project_id: int, 
@@ -135,8 +116,6 @@ def confirm_invite(access_token: str, db: db_dependency):
 
 @router.delete('/projects/{project_id}/leave', status_code=status.HTTP_204_NO_CONTENT)
 def leave_project(project_id: int, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Auth failed')
     if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
