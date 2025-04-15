@@ -70,7 +70,7 @@ async def update_task(task_id: int, task_data: TaskUpdateRequest, user: user_dep
     try:
         task_id = TaskService(db).update_task_service(user['id'], task_id, task_data)
         return {
-            "message": "Task created successfully", 
+            "message": "Task updated successfully", 
             "task_id": task_id
             }
     except ValueError as e:

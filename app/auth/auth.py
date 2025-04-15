@@ -52,7 +52,7 @@ async def create_user(db: db_dependency, create_user_rq: CreateUser):
         db.commit()
         return {
             "message": "Password updated successfully",
-            "id": existing_user.login
+            "email": existing_user.login
         }
     new_user_model = User(
         login = create_user_rq.login,
