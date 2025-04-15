@@ -116,17 +116,15 @@ def confirm_invite(access_token: str, db: db_dependency):
 
 @router.delete('/projects/{project_id}/leave', status_code=status.HTTP_204_NO_CONTENT)
 def leave_project(project_id: int, user: user_dependency, db: db_dependency):
-    if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
+    try:
+        UserService(db).leave_project(user['id'], project_id)
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь не является участником проекта"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    if not ProjectRepository(db).check_project_existing(project_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Проект не найден"
-        )
-    UserProjectAssociation(db).leave_project(user['id'], project_id)
 
 @router.delete('/projects/{project_id}/kick/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
 def kick_from_project(project_id: int, user_id: int, user: user_dependency, db: db_dependency):
