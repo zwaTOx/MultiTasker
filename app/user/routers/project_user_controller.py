@@ -38,7 +38,8 @@ async def get_users(
     project_id: Optional[int] = Query(None)
 ):
     try:
-        UserService(db).get_users_service(user['id'], project_id)
+        users = UserService(db).get_users_service(user['id'], project_id)
+        return users
     except HTTPException as e:
         raise e
     except ValueError as e:
@@ -128,20 +129,29 @@ def leave_project(project_id: int, user: user_dependency, db: db_dependency):
 
 @router.delete('/projects/{project_id}/kick/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
 def kick_from_project(project_id: int, user_id: int, user: user_dependency, db: db_dependency):
-    if not ProjectRepository(db).check_project_owner(user_id):
+    try:
+        UserService(db).kick_user_from_project(user['id'], user_id, project_id)
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Вы не являетесь владельцем проекта"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    if not ProjectRepository(db).check_project_existing(project_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Проект не найден"
-        )
-    if user_id == user['id']:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Кикнуть себя из проекта нельзя"
-        )
-    UserProjectAssociation(db).leave_project(user_id, project_id)
+    # if not ProjectRepository(db).check_project_owner(user_id):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="Вы не являетесь владельцем проекта"
+    #     )
+    # if not ProjectRepository(db).check_project_existing(project_id):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="Проект не найден"
+    #     )
+    # if user_id == user['id']:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Кикнуть себя из проекта нельзя"
+    #     )
+    # UserProjectAssociation(db).leave_project(user_id, project_id)
     

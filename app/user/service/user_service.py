@@ -21,7 +21,7 @@ class UserService:
             users = UserProjectAssociation(self.db).get_users_in_project(project_id)
         else:
             users = UserRepository(self.db).get_users()
-        return users
+        return users or []
     
     def leave_project(self, user_id: int, project_id: int):
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
@@ -31,4 +31,22 @@ class UserService:
             )
         if not ProjectRepository(self.db).check_project_existing(project_id):
             raise ValueError('Project not found')
+        UserProjectAssociation(self.db).leave_project(user_id, project_id)
+
+    def kick_user_from_project(self, req_id: int, user_id, project_id: int):
+        if not ProjectRepository(self.db).check_project_owner(req_id, project_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Вы не являетесь владельцем проекта"
+            )
+        if not ProjectRepository(self.db).check_project_existing(project_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Проект не найден"
+            )
+        if user_id == req_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Кикнуть себя из проекта нельзя"
+            )
         UserProjectAssociation(self.db).leave_project(user_id, project_id)
