@@ -1,8 +1,8 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ...user.schemas import UpdateUserRequest
-from ...user.user_repository import UserRepository
+from ..schemas import UpdateUserRequest
+from ..user_repository import UserRepository
 
 class ProfileService:
     def __init__(self, db: Session):
