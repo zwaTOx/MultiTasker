@@ -53,5 +53,5 @@ class CodeRepository:
 
     @staticmethod
     def generate_code() -> str:
-        code = str(randint(0, 999999))
+        code = str(randint(0, 999999)).zfill(6)
         return code

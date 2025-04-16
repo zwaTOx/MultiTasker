@@ -18,7 +18,7 @@ def generate_code() -> str:
     code = str(randint(0, 999999))
     return code
 
-def send_recovery_code(email, code=generate_code()):
+def send_recovery_code(email: str, code: str =generate_code()):
     recovery_code = code
     smtp_server, smtp_port = get_stmp(SENDER_EMAIL)
 
@@ -41,7 +41,6 @@ def send_recovery_code(email, code=generate_code()):
     # except Exception as e:
     #     print("Ошибка при отправке письма:", e)
     return recovery_code
-
 
 def send_project_invite(
     recipient_email: str,

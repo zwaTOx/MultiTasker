@@ -94,7 +94,7 @@ async def create_password_restore_code(request: Request, user_email: str, db: db
             status_code=500, detail=f"An unexpected error occurred.")
     CodeRepository(db).commit_code(user_email, code)
     return {
-        "message": f"Code sended on {user_email}"
+        "message": f"Code sent on {user_email}"
         }
 
 @router.post('/code/verify/{code}', response_model=Token)
