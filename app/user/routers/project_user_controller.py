@@ -1,6 +1,4 @@
 import datetime
-import os
-import uuid
 from fastapi import APIRouter, FastAPI, Depends, HTTPException, status, Request, Query
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -55,48 +53,18 @@ def invite_in_project(request: Request,
         db: db_dependency,
         inv_user_id: int = Query(None),
         user_email: str = Query(None)):
-    TEMP_TOKEN_EXPIRE_MINUTES = 10
-    if not ProjectRepository(db).check_project_owner(user['id'], project_id):
+    try: 
+        UserService(db).invite_user(user, request, project_id, inv_user_id, user_email)
+        return {
+            "message": "Пользователь отправлено приглашение в проект"
+        }
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Вы не являетесь создателем этого проекта"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    invited_user = UserRepository(db).get_user(inv_user_id)
-    if not invited_user:
-        invited_user = UserRepository(db).create_unverified_user(user_email)
-        inv_user_id = invited_user.id
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Проект не найден"
-        )
-    existing_assoc = UserProjectAssociation(db).check_user_in_project(inv_user_id, project_id)
-    if existing_assoc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь уже является участником проекта"
-        )
-    access_token = create_invite_project_token(project_id=project_id, 
-        id=inv_user_id, 
-        expires_delta=datetime.timedelta(minutes=TEMP_TOKEN_EXPIRE_MINUTES)
-    )
-    url = f"{request.base_url}/users/invite?access_token={access_token}"
-    result = send_project_invite(recipient_email=invited_user.login, 
-        inviter_name=user['login'], 
-        url=url, 
-        expire_in_minutes=TEMP_TOKEN_EXPIRE_MINUTES,
-        project_name=project.name)
-    # NotificationRepository(db).create_notification(inv_user_id, text=\
-    #     f'Тебя пригласили в проект "{project.name}"!')
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"An unexpected error occurred."
-            )
-    return {
-        "message": "Пользователь отправлено приглашение в проект"
-    }
 
 @router.post('/users/confirm/{access_token}')
 def confirm_invite(access_token: str, db: db_dependency):

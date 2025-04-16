@@ -20,7 +20,7 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = os.getenv('ALGORITHM')
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
-TEMP_TOKEN_EXPIRE_MINUTES = 10
+TEMP_TOKEN_EXPIRE_MINUTES = int(os.getenv('TEMP_TOKEN_EXPIRE_MINUTES'))
 
 router = APIRouter(
     tags=['Auth']
@@ -50,6 +50,7 @@ async def create_user(db: db_dependency, create_user_rq: CreateUser):
         existing_user.hashed_password = bcrypt_context.hash(create_user_rq.password)
         existing_user.is_verified = True
         db.commit()
+        db.refresh(existing_user)
         return {
             "message": "Password updated successfully",
             "email": existing_user.login
