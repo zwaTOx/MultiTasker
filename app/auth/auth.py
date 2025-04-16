@@ -100,28 +100,41 @@ async def create_password_restore_code(user_email: str, db: db_dependency):
 
 @router.post('/code/verify/{code}', response_model=Token)
 async def auth_with_code(code: str, db: db_dependency):
-    is_valid, user_id = CodeRepository(db).verify_code(code)
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Неверный или просроченный код"
-        )
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    token = create_access_token(
-        user.login, 
-        user.id, 
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    CodeRepository(db).delete_user_codes(user_id)
-    return {
+    try:
+        token = CodeService(db).auth_with_code(code)
+        return {
         'access_token': token, 
         'token_type': 'bearer'
-    }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
+        )
+    except HTTPException as e:
+        raise e
+    # is_valid, user_id = CodeRepository(db).verify_code(code)
+    # if not is_valid:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Неверный или просроченный код"
+    #     )
+    # user = db.query(User).filter(User.id == user_id).first()
+    # if not user:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="Пользователь не найден"
+    #     )
+    # token = create_access_token(
+    #     user.login, 
+    #     user.id, 
+    #     timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # )
+    # CodeRepository(db).delete_user_codes(user_id)
+    # return {
+    #     'access_token': token, 
+    #     'token_type': 'bearer'
+    # }
 
 @router.post('/password/reset')
 async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_dependency):
