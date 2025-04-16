@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 
+from ..user.service.user_service import UserService
 from ..auth.code_service import CodeService
 from .code_repository import CodeRepository
 from ..email_controller import send_recovery_code
@@ -41,32 +42,15 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("/register") 
 async def create_user(db: db_dependency, create_user_rq: CreateUser):
-    existing_user = UserRepository(db).get_user_by_email(create_user_rq.login)
-    if existing_user and existing_user.is_verified is True:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email already exists"
-        )
-    if existing_user and existing_user.is_verified is False:
-        existing_user.hashed_password = bcrypt_context.hash(create_user_rq.password)
-        existing_user.is_verified = True
-        db.commit()
-        db.refresh(existing_user)
+    try:
+        user_id, message = UserService(db).create_user(create_user_rq)
         return {
             "message": "Password updated successfully",
-            "email": existing_user.login
+            "id": user_id
         }
-    new_user_model = User(
-        login = create_user_rq.login,
-        hashed_password = bcrypt_context.hash(create_user_rq.password)
-    )
-    db.add(new_user_model)
-    db.commit()
-    return {
-        "message": "User created successfully",
-        "id": new_user_model.login
-    }
-
+    except HTTPException as e:
+        raise e
+    
 @router.post('/login', response_model=Token)
 async def login_for_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -133,36 +117,36 @@ def create_access_token(login: str, id: str, expires_delta: timedelta):
     encode.update({'exp': expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
-    encode = {'project_id': project_id, 'id': id}
-    expires = datetime.utcnow() + expires_delta
-    encode.update({'exp': expires})
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+# def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
+#     encode = {'project_id': project_id, 'id': id}
+#     expires = datetime.utcnow() + expires_delta
+#     encode.update({'exp': expires})
+#     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def decode_and_verify_invite_token(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        current_time = datetime.now(timezone.utc)
-        exp_timestamp = payload.get("exp")
-        if exp_timestamp:
-            exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
-            if current_time > exp_datetime:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Токен истек"
-                )
-        return payload
-    except JWTError as e:
-        if isinstance(e, jwt.ExpiredSignatureError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Токен истек"
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Недопустимый токен"
-            )
+# def decode_and_verify_invite_token(token: str):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         current_time = datetime.now(timezone.utc)
+#         exp_timestamp = payload.get("exp")
+#         if exp_timestamp:
+#             exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+#             if current_time > exp_datetime:
+#                 raise HTTPException(
+#                     status_code=status.HTTP_401_UNAUTHORIZED,
+#                     detail="Токен истек"
+#                 )
+#         return payload
+#     except JWTError as e:
+#         if isinstance(e, jwt.ExpiredSignatureError):
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Токен истек"
+#             )
+#         else:
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Недопустимый токен"
+#             )
 
 def auth_user(login: str, password: str, db: db_dependency) -> User | bool:
     user = db.query(User).filter(User.login == login).first()

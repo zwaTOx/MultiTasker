@@ -1,5 +1,5 @@
 
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import os
 from jose import JWTError, jwt
 from dotenv import load_dotenv
@@ -20,6 +20,40 @@ class CodeService:
     def __init__(self, db):
         self.db = db
     
+    @staticmethod
+    def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
+        encode = {'project_id': project_id, 'id': id}
+        expires = datetime.utcnow() + expires_delta
+        encode.update({'exp': expires})
+        return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+
+    @staticmethod
+    def decode_and_verify_invite_token(token: str):
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            current_time = datetime.now(timezone.utc)
+            exp_timestamp = payload.get("exp")
+            if exp_timestamp:
+                exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+                if current_time > exp_datetime:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Токен истек"
+                    )
+            return payload
+        except JWTError as e:
+            if isinstance(e, jwt.ExpiredSignatureError):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Токен истек"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Недопустимый токен"
+                )
+
     @staticmethod
     def create_access_token(login: str, id: str, expires_delta: timedelta):
         encode = {'login': login, 'id': id}

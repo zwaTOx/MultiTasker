@@ -10,7 +10,7 @@ from ...user.schemas import UserResponse
 from ...models_db import Project
 from ..user_repository import UserRepository
 from ...database import engine, Sessionlocal
-from ...auth.auth import create_access_token, create_invite_project_token, decode_and_verify_invite_token, get_current_user, bcrypt_context
+from ...auth.auth import create_access_token, get_current_user, bcrypt_context
 from ...email_controller import send_project_invite
 from ..user_project_association_repo import UserProjectAssociation 
 from ...project.project_repository import ProjectRepository

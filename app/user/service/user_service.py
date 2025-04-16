@@ -4,22 +4,37 @@ from typing import List
 from dotenv import load_dotenv
 from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
+from ...auth.code_service import CodeService
 from ...email_controller import send_project_invite
-from ...auth.auth import create_invite_project_token, decode_and_verify_invite_token
-
 from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
-from ..schemas import UserResponse
+from ..schemas import CreateUser, UserResponse
 from ..user_repository import UserRepository
 
 load_dotenv()
-TEMP_TOKEN_EXPIRE_MINUTES = os.getenv('TEMP_TOKEN_EXPIRE_MINUTES')
+TEMP_TOKEN_EXPIRE_MINUTES = int(os.getenv('TEMP_TOKEN_EXPIRE_MINUTES'))
+
+bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 class UserService:
     def __init__(self, db: Session):
         self.db = db
-    
+
+    def create_user(self, create_user_rq: CreateUser) -> tuple[int, str]:
+        existing_user = UserRepository(self.db).get_user_by_email(create_user_rq.login)
+        if existing_user and existing_user.is_verified is True:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists"
+            )
+        if existing_user and existing_user.is_verified is False:
+            UserRepository(self.db).reset_user_password(bcrypt_context.hash(create_user_rq.password))
+            UserRepository(self.db).verify_user(create_user_rq.login)
+            return existing_user.id, "User verified successfully"
+        return existing_user.id, "User successfully created"
+
     def get_users_service(self, user_id: int, project_id: int = None) -> List[UserResponse]:
         if project_id is not None:
             if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
@@ -55,7 +70,7 @@ class UserService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="The user is already a member of the project"
             )
-        access_token = create_invite_project_token(project_id=project_id, 
+        access_token = CodeService(self.db).create_invite_project_token(project_id=project_id, 
             id=inv_user_id, 
             expires_delta=datetime.timedelta(minutes=TEMP_TOKEN_EXPIRE_MINUTES)
         )
@@ -72,7 +87,7 @@ class UserService:
                 )
 
     def confirm_invite(self, access_token: str) -> tuple[int, int]:
-        token_data = decode_and_verify_invite_token(access_token)
+        token_data =  CodeService(self.db).decode_and_verify_invite_token(access_token)
         if not token_data:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Invalid or expired token")

@@ -93,3 +93,9 @@ class UserRepository:
         user.hashed_password = bcrypt_context.hash(new_password)
         self.db.commit()
         self.db.refresh(user)
+
+    def verify_user(self, email: str):
+        user = self.db.query(db_User).filter(db_User.login==email).first()
+        user.is_verified = True
+        self.db.commit()
+        self.db.refresh(user)
