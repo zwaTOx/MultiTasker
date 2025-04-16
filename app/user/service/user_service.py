@@ -1,5 +1,7 @@
 import datetime
+import os
 from typing import List
+from dotenv import load_dotenv
 from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -11,6 +13,8 @@ from ...user.user_project_association_repo import UserProjectAssociation
 from ..schemas import UserResponse
 from ..user_repository import UserRepository
 
+load_dotenv()
+TEMP_TOKEN_EXPIRE_MINUTES = os.getenv('TEMP_TOKEN_EXPIRE_MINUTES')
 
 class UserService:
     def __init__(self, db: Session):
@@ -33,7 +37,6 @@ class UserService:
         project_id: int, 
         inv_user_id: int = None, 
         user_email: str = None):
-        TEMP_TOKEN_EXPIRE_MINUTES = 10
         if not ProjectRepository(self.db).check_project_owner(user['id'], project_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
