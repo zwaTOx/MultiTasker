@@ -69,7 +69,7 @@ async def get_icon(
         if project_id is not None:
             file_path = AttachmentService(db).get_project_icon(project_id)
         else:
-            if user_id is None:
+            if user_id is not None:
                 file_path = AttachmentService(db).get_user_icon(user_id)
             else: 
                 file_path = AttachmentService(db).get_user_icon(user['id'])

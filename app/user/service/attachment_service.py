@@ -47,7 +47,7 @@ class AttachmentService:
 
     def get_user_icon(self, user_id):
         founded_user = UserRepository(self.db).get_user(user_id)
-        if not founded_user:
+        if founded_user is None:
             raise HTTPException(status_code=404, detail="User not found")
         if founded_user.icon_id is None:
             return self.get_default_user_icon()
