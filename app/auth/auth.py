@@ -113,51 +113,19 @@ async def auth_with_code(code: str, db: db_dependency):
         )
     except HTTPException as e:
         raise e
-    # is_valid, user_id = CodeRepository(db).verify_code(code)
-    # if not is_valid:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Неверный или просроченный код"
-    #     )
-    # user = db.query(User).filter(User.id == user_id).first()
-    # if not user:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_404_NOT_FOUND,
-    #         detail="Пользователь не найден"
-    #     )
-    # token = create_access_token(
-    #     user.login, 
-    #     user.id, 
-    #     timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    # )
-    # CodeRepository(db).delete_user_codes(user_id)
-    # return {
-    #     'access_token': token, 
-    #     'token_type': 'bearer'
-    # }
 
 @router.post('/password/reset')
 async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_dependency):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    if not payload or "login" not in payload:
+    try:
+        CodeService(db).reset_password(token, reset_data)
+        return {"message": "Password successfully changed"}
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный формат токена"
+            status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
-    user = db.query(User).filter(User.login == payload["login"]).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    if reset_data.new_password != reset_data.confirm_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пароли не совпадают"
-        )
-    user.hashed_password = bcrypt_context.hash(reset_data.new_password)
-    db.commit()
-    return {"message": "Password successfully changed"}
+    except HTTPException as e:
+        raise e
 
 def create_access_token(login: str, id: str, expires_delta: timedelta):
     encode = {'login': login, 'id': id}

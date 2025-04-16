@@ -32,9 +32,14 @@ class UserRepository:
             is_verified=user.is_verified
         ) for user in users]
     
-    def get_user_by_email(self, email: str):
+    def get_user_by_email(self, email: str) -> UserResponse:
         user = self.db.query(db_User).filter(db_User.login==email).first()
-        return user
+        return UserResponse(
+            id=user.id,
+            login=user.login,
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified)
     
     # def update_user_icon(self, user: db_User, filename: str):
     #     user.icon = filename
@@ -82,3 +87,9 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return True
+
+    def reset_user_password(self, user_id: int, new_password: str):
+        user = self.db.query(db_User).filter(db_User.id==user_id).first()
+        user.hashed_password = bcrypt_context.hash(new_password)
+        self.db.commit()
+        self.db.refresh(user)

@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
+from ..user.schemas import ResetPasswordRequest
 from ..user.user_repository import UserRepository
 from ..email_controller import send_recovery_code
 from ..auth.code_repository import CodeRepository
@@ -54,3 +55,20 @@ class CodeService:
         )
         CodeRepository(self.db).delete_user_codes(user_id)
         return token
+    
+    def reset_password(self, token: str, reset_data: ResetPasswordRequest):
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload or "login" not in payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token format"
+            )
+        user = UserRepository(self.db).get_user_by_email(payload['login'])
+        if not user:
+            raise ValueError("User not found")
+        if reset_data.new_password != reset_data.confirm_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Passwords don't match"
+            )
+        UserRepository(self.db).reset_user_password(user.id, reset_data.new_password)
