@@ -27,13 +27,13 @@ class CategoryRepository:
             color = category.color
         ) for category in categories]
     
-    def create_category(db: Session, name: str, color: str, user_id) -> int:
-        db_category = db_category(
+    def create_category(self, name: str, color: str, user_id) -> int:
+        category = db_category(
             name=name,
             color=color,
             user_id=user_id
         )
-        db.add(db_category)
-        db.commit()
-        db.refresh(db_category)
-        return db_category.id
+        self.db.add(category)
+        self.db.commit()
+        self.db.refresh(category)
+        return category.id
