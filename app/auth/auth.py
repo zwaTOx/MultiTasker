@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 
+from ..auth.code_service import CodeService
 from .code_repository import CodeRepository
 from ..email_controller import send_recovery_code
 from ..database import engine, Sessionlocal
@@ -83,19 +84,19 @@ async def login_for_token(
     return {'access_token': token, 'token_type': 'bearer'}
 
 @router.post('/сode/send')
-async def create_password_restore_code(request: Request, user_email: str, db: db_dependency):
-    code = CodeRepository.generate_code()
-    result = send_recovery_code(
-        email=user_email,
-        code=code
-    )
-    if not result:
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred.")
-    CodeRepository(db).commit_code(user_email, code)
-    return {
+async def create_password_restore_code(user_email: str, db: db_dependency):
+    try:
+        CodeService(db).create_password_restore_code(user_email)
+        return {
         "message": f"Code sent on {user_email}"
         }
+    except RuntimeError as e:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=str(e)
+        )
+    except HTTPException as e:
+        raise e
 
 @router.post('/code/verify/{code}', response_model=Token)
 async def auth_with_code(code: str, db: db_dependency):
