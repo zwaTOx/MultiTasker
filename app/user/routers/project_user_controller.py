@@ -68,20 +68,13 @@ def invite_in_project(request: Request,
 
 @router.post('/users/confirm/{access_token}')
 def confirm_invite(access_token: str, db: db_dependency):
-    token_data = decode_and_verify_invite_token(access_token)
-    if not token_data:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-        detail="Недействительный или просроченный токен")
-    user_id = token_data.get('id')
-    project_id = token_data.get('project_id')
-    if UserProjectAssociation(db).check_user_in_project(user_id, project_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь уже является участником проекта"
-        )
-    UserProjectAssociation(db).add_user_in_project(user_id, project_id)
-    return {'user_id': user_id,
-        "project_id": project_id}
+    try:
+        user_id, project_id = UserService(db).confirm_invite(access_token)
+        return {'user_id': user_id,
+            "project_id": project_id
+        }
+    except HTTPException as e:
+        raise e
 
 @router.delete('/projects/{project_id}/leave', status_code=status.HTTP_204_NO_CONTENT)
 def leave_project(project_id: int, user: user_dependency, db: db_dependency):
