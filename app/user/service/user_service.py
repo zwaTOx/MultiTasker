@@ -15,6 +15,7 @@ from ..user_repository import UserRepository
 
 load_dotenv()
 TEMP_TOKEN_EXPIRE_MINUTES = int(os.getenv('TEMP_TOKEN_EXPIRE_MINUTES'))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -24,16 +25,31 @@ class UserService:
 
     def create_user(self, create_user_rq: CreateUser) -> tuple[int, str]:
         existing_user = UserRepository(self.db).get_user_by_email(create_user_rq.login)
+        if not existing_user:
+            new_user = UserRepository(self.db).create_user(create_user_rq.login, create_user_rq.password)
+            return new_user.id, "User successfully created"
         if existing_user and existing_user.is_verified is True:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User with this email already exists"
             )
-        if existing_user and existing_user.is_verified is False:
-            UserRepository(self.db).reset_user_password(bcrypt_context.hash(create_user_rq.password))
-            UserRepository(self.db).verify_user(create_user_rq.login)
-            return existing_user.id, "User verified successfully"
-        return existing_user.id, "User successfully created"
+        UserRepository(self.db).reset_user_password(create_user_rq.password)
+        UserRepository(self.db).verify_user(create_user_rq.login)
+        return existing_user.id, "User verified successfully"
+        
+
+    def login_user(self, username, password) -> str:
+        user = UserRepository(self.db).auth_user(username, password)
+        if not user:
+            raise HTTPException(status_code=401, detail='Could not validate user.')
+        if user.is_verified is False:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email is not verified"
+            )
+        token = CodeService(self.db).create_access_token(user.login, user.id, 
+            datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return token
 
     def get_users_service(self, user_id: int, project_id: int = None) -> List[UserResponse]:
         if project_id is not None:

@@ -45,7 +45,7 @@ async def create_user(db: db_dependency, create_user_rq: CreateUser):
     try:
         user_id, message = UserService(db).create_user(create_user_rq)
         return {
-            "message": "Password updated successfully",
+            "message": message,
             "id": user_id
         }
     except HTTPException as e:
@@ -56,17 +56,22 @@ async def login_for_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
 ):
-    user = auth_user(form_data.username, form_data.password, db)
-    if not user:
-        raise HTTPException(status_code=401, detail='Could not validate user.')
-    if user.is_verified is False:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email is not verified"
-        )
-    token = create_access_token(user.login, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    return {'access_token': token, 'token_type': 'bearer'}
-
+    # user = auth_user(form_data.username, form_data.password, db)
+    # if not user:
+    #     raise HTTPException(status_code=401, detail='Could not validate user.')
+    # if user.is_verified is False:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="User with this email is not verified"
+    #     )
+    # token = CodeService(db).create_access_token(user.login, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    # return {'access_token': token, 'token_type': 'bearer'}
+    try:
+        token = UserService(db).login_user(form_data.username, form_data.password)
+        return {'access_token': token, 'token_type': 'bearer'}
+    except HTTPException as e:
+        raise e
+    
 @router.post('/сode/send')
 async def create_password_restore_code(user_email: str, db: db_dependency):
     try:
@@ -111,42 +116,11 @@ async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_de
     except HTTPException as e:
         raise e
 
-def create_access_token(login: str, id: str, expires_delta: timedelta):
-    encode = {'login': login, 'id': id}
-    expires = datetime.utcnow() + expires_delta
-    encode.update({'exp': expires})
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
-
-# def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
-#     encode = {'project_id': project_id, 'id': id}
+# def create_access_token(login: str, id: str, expires_delta: timedelta):
+#     encode = {'login': login, 'id': id}
 #     expires = datetime.utcnow() + expires_delta
 #     encode.update({'exp': expires})
 #     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
-
-# def decode_and_verify_invite_token(token: str):
-#     try:
-#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-#         current_time = datetime.now(timezone.utc)
-#         exp_timestamp = payload.get("exp")
-#         if exp_timestamp:
-#             exp_datetime = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
-#             if current_time > exp_datetime:
-#                 raise HTTPException(
-#                     status_code=status.HTTP_401_UNAUTHORIZED,
-#                     detail="Токен истек"
-#                 )
-#         return payload
-#     except JWTError as e:
-#         if isinstance(e, jwt.ExpiredSignatureError):
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Токен истек"
-#             )
-#         else:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Недопустимый токен"
-#             )
 
 def auth_user(login: str, password: str, db: db_dependency) -> User | bool:
     user = db.query(User).filter(User.login == login).first()

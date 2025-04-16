@@ -21,6 +21,13 @@ class CodeService:
         self.db = db
     
     @staticmethod
+    def create_access_token(login: str, id: str, expires_delta: timedelta):
+        encode = {'login': login, 'id': id}
+        expires = datetime.utcnow() + expires_delta
+        encode.update({'exp': expires})
+        return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    @staticmethod
     def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
         encode = {'project_id': project_id, 'id': id}
         expires = datetime.utcnow() + expires_delta

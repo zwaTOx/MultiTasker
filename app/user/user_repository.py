@@ -10,6 +10,35 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def create_user(self, login: str, password: str) -> UserResponse:
+        user = db_User(
+            login = login,
+            hashed_password = bcrypt_context.hash(password)
+        )
+        self.db.add(user)
+        self.db.commit()
+        return UserResponse(
+            id = user.id,
+            login=user.login,
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified
+        )
+
+    def auth_user(self, login: str, password: str) -> UserResponse | bool:
+        user = self.db.query(db_User).filter(db_User.login == login).first()
+        if not user:
+            return False
+        if not bcrypt_context.verify(password, user.hashed_password):  
+            return False
+        return UserResponse(
+            id = user.id,
+            login=user.login,
+            username=user.username,
+            icon_id=user.icon_id,
+            is_verified=user.is_verified
+        )
+
     def get_user(self, user_id: int) -> UserResponse|None:
         user = self.db.query(db_User).filter(db_User.id==user_id).first()
         if user is None:
@@ -32,14 +61,14 @@ class UserRepository:
             is_verified=user.is_verified
         ) for user in users]
     
-    def get_user_by_email(self, email: str) -> UserResponse:
+    def get_user_by_email(self, email: str) -> UserResponse|None:
         user = self.db.query(db_User).filter(db_User.login==email).first()
         return UserResponse(
             id=user.id,
             login=user.login,
             username=user.username,
             icon_id=user.icon_id,
-            is_verified=user.is_verified)
+            is_verified=user.is_verified) if user else None
     
     # def update_user_icon(self, user: db_User, filename: str):
     #     user.icon = filename
