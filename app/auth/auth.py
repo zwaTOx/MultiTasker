@@ -11,18 +11,12 @@ from dotenv import load_dotenv
 
 from ..user.service.user_service import UserService
 from ..auth.code_service import CodeService
-from .code_repository import CodeRepository
-from ..email_controller import send_recovery_code
 from ..database import engine, Sessionlocal
 from ..user.schemas import CreateUser, ResetPasswordRequest, Token
-from ..user.user_repository import UserRepository
-from ..models_db import User
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = os.getenv('ALGORITHM')
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
-TEMP_TOKEN_EXPIRE_MINUTES = int(os.getenv('TEMP_TOKEN_EXPIRE_MINUTES'))
 
 router = APIRouter(
     tags=['Auth']
@@ -56,16 +50,6 @@ async def login_for_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
 ):
-    # user = auth_user(form_data.username, form_data.password, db)
-    # if not user:
-    #     raise HTTPException(status_code=401, detail='Could not validate user.')
-    # if user.is_verified is False:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="User with this email is not verified"
-    #     )
-    # token = CodeService(db).create_access_token(user.login, user.id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    # return {'access_token': token, 'token_type': 'bearer'}
     try:
         token = UserService(db).login_user(form_data.username, form_data.password)
         return {'access_token': token, 'token_type': 'bearer'}
@@ -115,20 +99,6 @@ async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_de
         )
     except HTTPException as e:
         raise e
-
-# def create_access_token(login: str, id: str, expires_delta: timedelta):
-#     encode = {'login': login, 'id': id}
-#     expires = datetime.utcnow() + expires_delta
-#     encode.update({'exp': expires})
-#     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def auth_user(login: str, password: str, db: db_dependency) -> User | bool:
-    user = db.query(User).filter(User.login == login).first()
-    if not user:
-        return False
-    if not bcrypt_context.verify(password, user.hashed_password):  
-        return False
-    return user
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:

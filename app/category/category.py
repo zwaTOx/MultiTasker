@@ -3,6 +3,7 @@ from fastapi import APIRouter, FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Annotated, List
 
+from ..category.category_service import CategoryService
 from ..models_db import Category as db_Category
 from ..database import engine, Sessionlocal
 from ..auth.auth import get_current_user
@@ -25,35 +26,16 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.post("/")
 async def create_category(category: CreateCategoryRequest, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Auth Failed")
-    db_category = db_Category(
-        name=category.name,
-        color=category.color,
-        user_id=user['id']  
-    )
-    
-    db.add(db_category)
-    db.commit()
-    db.refresh(db_category)
-    return {"message": "Category created successfully", "category_id": db_category.id}
+    category_id = CategoryService(db).create_category(category.name, category.color, user['id'])
+    return {
+        "message": "Category created successfully",
+        "category_id": category_id
+    }
 
 @router.get('/',
-    response_model=List[CategoryResponseExample],
-    responses={
-        200: {"description": "Get user categories successfully"},
-        401: {"description": "Unauthorized"},
-        404: {"description": "Category not found"}
-    })
+    response_model=List[CategoryResponseExample])
 async def get_categories(user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Auth Failed")
-    db_categories = db.query(db_Category).filter(db_Category.user_id==user['id']).all()
-    print(db_categories)
-    categories = [
-        {"id": category.id, "name": category.name, "color": category.color}
-        for category in db_categories
-    ]
+    categories = CategoryService(db).get_categories(user['id'])
     return categories
 
 @router.put("/{category_id}", 
