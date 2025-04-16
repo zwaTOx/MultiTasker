@@ -1,5 +1,7 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from ..category.models import UpdateCategoryRequest
 from ..category.category_repository import CategoryRepository
 
 class CategoryService:
@@ -12,3 +14,16 @@ class CategoryService:
     def get_categories(self, user_id):
         categories = CategoryRepository(self.db).get_categories(user_id)
         return categories
+    
+    def update_category(self, user_id, category_id, update_data: UpdateCategoryRequest):
+        category = CategoryRepository(self.db).get_category(user_id, category_id)
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+        updated_category = CategoryRepository(self.db).update_category(category.id, user_id, update_data)
+        return updated_category
+    
+    def delete_category(self, user_id, category_id):
+        db_category = CategoryRepository(self.db).get_category(user_id, category_id)
+        if not db_category:
+            raise HTTPException(status_code=404, detail="Category not found")
+        CategoryRepository(self.db).delete_category(user_id, category_id)

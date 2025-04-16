@@ -38,40 +38,19 @@ async def get_categories(user: user_dependency, db: db_dependency):
     categories = CategoryService(db).get_categories(user['id'])
     return categories
 
-@router.put("/{category_id}", 
-    responses={
-        200: {"description": "Category updated successfully"},
-        401: {"description": "Unauthorized"},
-        404: {"description": "Category not found"}
-    })
-async def update_category(category_id: int, update_data: UpdateCategoryRequest, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Auth Failed")
-    db_category = db.query(db_Category).filter(db_Category.id==category_id,
-        db_Category.user_id==user['id']).first()
-    if not db_category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    if update_data.name is not None:
-        db_category.name = update_data.name
-    if update_data.color is not None:
-        db_category.color = update_data.color
-    db.commit()
-    db.refresh(db_category)
-    return {"id": db_category.id, "name": db_category.name, "color": db_category.color}
+@router.put("/{category_id}")
+async def update_category(category_id: int, update_data: UpdateCategoryRequest, 
+    user: user_dependency, db: db_dependency):
+    try:
+        updated_category = CategoryService(db).update_category(user['id'], category_id, update_data)
+        return updated_category
+    except HTTPException as e:
+        raise e
 
-@router.delete('/{category_id}', status_code=status.HTTP_204_NO_CONTENT,
-    responses={
-        204: {"description": "Category deleted successfully"},
-        401: {"description": "Unauthorized"},
-        404: {"description": "Category not found"}
-    })
+@router.delete('/{category_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(category_id: int, user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Auth Failed")
-    db_category = db.query(db_Category).filter(db_Category.id==category_id,
-        db_Category.user_id==user['id']).first()
-    if not db_category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    db.delete(db_category)
-    db.commit()
+    try:
+        CategoryService(db).delete_category(user['id'], category_id)
+    except HTTPException as e:
+        raise e
     

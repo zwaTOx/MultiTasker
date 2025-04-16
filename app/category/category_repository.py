@@ -1,6 +1,7 @@
 from typing import List
 from sqlalchemy.orm import Session
 
+from ..category.models import UpdateCategoryRequest
 from ..category.schemas import CategoryResponseSchema
 from ..models_db import Category as db_category
 
@@ -37,3 +38,31 @@ class CategoryRepository:
         self.db.commit()
         self.db.refresh(category)
         return category.id
+    
+    def update_category(self, category_id, user_id, data: UpdateCategoryRequest) -> CategoryResponseSchema|None:
+        category = self.db.query(db_category).filter(
+        db_category.id == category_id,
+        db_category.user_id == user_id
+        ).first()
+        if category is None:
+            return None
+        if data.name is not None:
+            category.name = data.name
+        if data.color is not None:
+            category.color = data.color
+        self.db.commit()
+        self.db.refresh(category)
+        
+        return CategoryResponseSchema(
+            id=category.id,
+            name=category.name,
+            color=category.color
+    )
+
+    def delete_category(self, user_id: int, category_id: int):
+        category = self.db.query(db_category).filter(
+            db_category.id == category_id,
+            db_category.user_id == user_id
+        ).first()
+        self.db.delete(category)
+        self.db.commit()
