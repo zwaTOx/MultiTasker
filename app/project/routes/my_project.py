@@ -33,7 +33,7 @@ async def get_my_projects(user: user_dependency, db: db_dependency):
     projects = ProjectService(db).get_my_projects_service(user['id'])
     return projects
 
-@router.post('/')
+@router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_project(
         project_data: CreateProjectRequest, 
         user: user_dependency, 

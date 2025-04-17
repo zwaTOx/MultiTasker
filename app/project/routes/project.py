@@ -56,23 +56,3 @@ async def move_project_in_category(project_id: int, request: MoveProjectRequest,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         ) 
-    # category = db.query(db_category).filter(db_category.user_id==user['id'], 
-    #     db_category.id==request.category_id).first()
-    # if category is None:
-    #     raise HTTPException(status_code=404 ,detail = 'Category not found')
-    # if not ProjectRepository(db).check_project_existing(project_id):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_404_NOT_FOUND,
-    #         detail="Проект не найден"
-    #     )
-    # if not UserProjectAssociation(db).check_user_in_project(user['id'], project_id):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Пользователь не является участником проекта"
-    #     )
-    # if not UserProjectAssociation(db).change_project_category(user['id'], project_id, request.category_id):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="Не удалось изменить категорию"
-    #     )
-    # return {"detail": "Категория проекта успешно изменена"}

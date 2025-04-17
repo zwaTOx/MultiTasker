@@ -34,7 +34,7 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@router.post("/register") 
+@router.post("/register", status_code=status.HTTP_201_CREATED) 
 async def create_user(db: db_dependency, create_user_rq: CreateUser):
     try:
         user_id, message = UserService(db).create_user(create_user_rq)
@@ -45,7 +45,7 @@ async def create_user(db: db_dependency, create_user_rq: CreateUser):
     except HTTPException as e:
         raise e
     
-@router.post('/login', response_model=Token)
+@router.post('/login', response_model=Token, status_code=status.HTTP_201_CREATED)
 async def login_for_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
@@ -56,7 +56,7 @@ async def login_for_token(
     except HTTPException as e:
         raise e
     
-@router.post('/сode/send')
+@router.post('/сode/send', status_code=status.HTTP_201_CREATED)
 async def create_password_restore_code(user_email: str, db: db_dependency):
     try:
         CodeService(db).create_password_restore_code(user_email)
@@ -71,7 +71,7 @@ async def create_password_restore_code(user_email: str, db: db_dependency):
     except HTTPException as e:
         raise e
 
-@router.post('/code/verify/{code}', response_model=Token)
+@router.post('/code/verify/{code}', response_model=Token, status_code=status.HTTP_201_CREATED)
 async def auth_with_code(code: str, db: db_dependency):
     try:
         token = CodeService(db).auth_with_code(code)
@@ -87,7 +87,7 @@ async def auth_with_code(code: str, db: db_dependency):
     except HTTPException as e:
         raise e
 
-@router.post('/password/reset')
+@router.post('/password/reset', status_code=status.HTTP_201_CREATED)
 async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_dependency):
     try:
         CodeService(db).reset_password(token, reset_data)

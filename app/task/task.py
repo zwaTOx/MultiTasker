@@ -45,7 +45,7 @@ async def get_task(task_id: int, user: user_dependency, db: db_dependency):
             detail=str(e)
         )     
 
-@router.post('/{project_id}')
+@router.post('/{project_id}', status_code=status.HTTP_201_CREATED)
 async def create_task(project_id: int, task_data: TaskCreateRequest, 
     user: user_dependency, db: db_dependency):
     try:

@@ -33,7 +33,7 @@ DEFAULT_PROJECT_ICON = 'project.png'
 ALLOWED_MIME_TYPES = ["image/jpeg", "image/png"]
 MAX_FILE_SIZE = 50 * 1024 * 1024
 
-@router.post('/')
+@router.post('/', status_code=status.HTTP_201_CREATED)
 async def post_attachment(uploaded_file: UploadFile, user: user_dependency, db: db_dependency):
     try:
         attachment_id = AttachmentService(db).post_attachment_service(user['id'], uploaded_file)

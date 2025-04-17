@@ -24,7 +24,7 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_category(category: CreateCategoryRequest, user: user_dependency, db: db_dependency):
     category_id = CategoryService(db).create_category(category.name, category.color, user['id'])
     return {

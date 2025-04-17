@@ -46,7 +46,7 @@ async def get_users(
             detail=str(e)
         )
 
-@router.post('/users/{user_id}/invite')
+@router.post('/users/{user_id}/invite', status_code=status.HTTP_201_CREATED)
 def invite_in_project(request: Request,  
         project_id: int, 
         user: user_dependency, 
@@ -66,7 +66,7 @@ def invite_in_project(request: Request,
             detail=str(e)
         )
 
-@router.post('/users/confirm/{access_token}')
+@router.post('/users/confirm/{access_token}', status_code=status.HTTP_201_CREATED)
 def confirm_invite(access_token: str, db: db_dependency):
     try:
         user_id, project_id = UserService(db).confirm_invite(access_token)
