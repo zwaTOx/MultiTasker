@@ -128,3 +128,9 @@ class UserRepository:
         user.is_verified = True
         self.db.commit()
         self.db.refresh(user)
+
+    def update_admin(self, user_id: int, is_admin: bool):
+        user = self.db.query(db_User).filter(db_User.id==user_id).first()
+        user.is_admin = is_admin
+        self.db.commit()
+        self.db.refresh(user)

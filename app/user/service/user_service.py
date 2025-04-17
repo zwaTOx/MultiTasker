@@ -149,3 +149,18 @@ class UserService:
                 detail="Кикнуть себя из проекта нельзя"
             )
         UserProjectAssociation(self.db).leave_project(user_id, project_id)
+
+    def update_admin(self, user_id: int, upd_user_id: int, is_admin: bool):
+        if not UserRepository(self.db).check_admin_perms(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Доступ запрещен"
+            )
+
+        target_user = UserRepository(self.db).get_user(upd_user_id)
+        if not target_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+        UserRepository(self.db).update_admin(upd_user_id, is_admin)
