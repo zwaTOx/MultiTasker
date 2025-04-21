@@ -41,16 +41,10 @@ async def get_categories(user: user_dependency, db: db_dependency):
 @router.put("/{category_id}")
 async def update_category(category_id: int, update_data: UpdateCategoryRequest, 
     user: user_dependency, db: db_dependency):
-    try:
-        updated_category = CategoryService(db).update_category(user['id'], category_id, update_data)
-        return updated_category
-    except HTTPException as e:
-        raise e
+    updated_category = CategoryService(db).update_category(user['id'], category_id, update_data)
+    return updated_category
 
 @router.delete('/{category_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(category_id: int, user: user_dependency, db: db_dependency):
-    try:
-        CategoryService(db).delete_category(user['id'], category_id)
-    except HTTPException as e:
-        raise e
+    CategoryService(db).delete_category(user['id'], category_id)
     
