@@ -1,19 +1,27 @@
 from typing import List
 from sqlalchemy.orm import Session
 
-from ..category.models import UpdateCategoryRequest
+from ..category.schemas import UpdateCategoryRequest
 from ..category.schemas import CategoryResponseSchema
 from ..models_db import Category as db_category
+from ..exceptions import CategoryNotFound
 
 class CategoryRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_category(self, user_id: int, category_id: int) -> CategoryResponseSchema|None:
-        category = self.db.query(db_category).filter(db_category.user_id==user_id, 
+    def _get_category(self, category_id: int, user_id: int = None) -> db_category:
+        if user_id is not None:
+            category = self.db.query(db_category).filter(db_category.user_id==user_id, 
         db_category.id==category_id).first()
-        if category is None:
-            return None
+        else:
+            category = self.db.query(db_category).filter(db_category.id==category_id).first()
+        if not category:
+            raise CategoryNotFound(category_id, user_id)
+        return category
+
+    def get_category(self, user_id: int, category_id: int) -> CategoryResponseSchema|None:
+        category = self._get_category(category_id, user_id)
         return CategoryResponseSchema(
             id = category_id,
             name = category.name,
@@ -40,12 +48,7 @@ class CategoryRepository:
         return category.id
     
     def update_category(self, category_id, user_id, data: UpdateCategoryRequest) -> CategoryResponseSchema|None:
-        category = self.db.query(db_category).filter(
-        db_category.id == category_id,
-        db_category.user_id == user_id
-        ).first()
-        if category is None:
-            return None
+        category = self._get_category(category_id, user_id)
         if data.name is not None:
             category.name = data.name
         if data.color is not None:
@@ -60,9 +63,6 @@ class CategoryRepository:
     )
 
     def delete_category(self, user_id: int, category_id: int):
-        category = self.db.query(db_category).filter(
-            db_category.id == category_id,
-            db_category.user_id == user_id
-        ).first()
+        category = self._get_category(category_id, user_id)
         self.db.delete(category)
         self.db.commit()

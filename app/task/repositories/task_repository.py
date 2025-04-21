@@ -104,7 +104,8 @@ class TaskRepository:
         db_Task.owner_id==user_id).first()
         return task
     
-    def get_accessed_tasks_filter(self, user_id: int, filters: Optional[TaskFilters] = None) -> List[TaskItemResponse]:
+    def get_accessed_tasks_filter(self, user_id: int, 
+        filters: Optional[TaskFilters] = None) -> List[TaskItemResponse]:
         if not UserRepository(self.db).check_admin_perms(user_id):
             query = self.db.query(db_Task).join(
             UserProjectAssociation,
@@ -171,10 +172,8 @@ class TaskRepository:
             project_id=project_id,
             parent_task_id=task_data.parent_task_id
         )
-        
         self.db.add(task)
         self.db.commit()
-        self.db.refresh(task)
         return task.id
 
     def update_task(self, task_id: int, task_data: TaskUpdateRequest) -> int:

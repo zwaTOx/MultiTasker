@@ -7,7 +7,7 @@ from ..category.category_service import CategoryService
 from ..models_db import Category as db_Category
 from ..database import engine, Sessionlocal
 from ..auth.auth import get_current_user
-from .models import CategoryResponseExample, CreateCategoryRequest, UpdateCategoryRequest
+from .schemas import CategoryResponseExample, CreateCategoryRequest, UpdateCategoryRequest
 
 router = APIRouter(
     prefix="/my/categories",

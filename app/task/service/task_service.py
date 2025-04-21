@@ -12,7 +12,7 @@ class TaskService:
     def __init__(self, db):
         self.db = db
     
-    def get_task_service(self, task_id: int, user_id: int) -> Optional[TaskDetailResponse]:
+    def get_task(self, task_id: int, user_id: int) -> Optional[TaskDetailResponse]:
         task = TaskRepository(self.db).get_task(task_id)
         
         if task is None:
@@ -26,11 +26,11 @@ class TaskService:
             raise ValueError("Project not found")
         return task
     
-    def get_tasks_service(self, user_id, filters: TaskFilters = Depends()):
+    def get_tasks(self, user_id, filters: TaskFilters = Depends()):
         tasks = TaskRepository(self.db).get_accessed_tasks_filter(user_id, filters)
         return tasks
     
-    def create_task_service(self, user_id: int, project_id: int, task_data: TaskCreateRequest) -> int:
+    def create_task(self, user_id: int, project_id: int, task_data: TaskCreateRequest) -> int:
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
             raise PermissionError("Access denied to project")
         performer_user = UserRepository(self.db).get_user(task_data.performer_id)
@@ -43,7 +43,7 @@ class TaskService:
         task_id = TaskRepository(self.db).create_task(project_id, task_data, user_id)
         return task_id
     
-    def update_task_service(self, user_id, task_id: int, task_data: TaskUpdateRequest) -> int:
+    def update_task(self, user_id, task_id: int, task_data: TaskUpdateRequest) -> int:
         task = TaskRepository(self.db).get_task(task_id)
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
             raise PermissionError(f"У вас нет доступа к этому проекту."
@@ -58,7 +58,7 @@ class TaskService:
         task_id = TaskRepository(self.db).update_task(task.id, task_data)
         return task_id
     
-    def delete_task_service(self, user_id: int, task_id: int):
+    def delete_task(self, user_id: int, task_id: int):
         task = TaskRepository(self.db).get_task(task_id)
         if task is None:
             raise ValueError(f"Задача с ID {task_id} не найдена в системе")
