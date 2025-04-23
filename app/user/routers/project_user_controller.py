@@ -35,16 +35,8 @@ async def get_users(
     db: db_dependency,
     project_id: Optional[int] = Query(None)
 ):
-    try:
-        users = UserService(db).get_users_service(user['id'], project_id)
-        return users
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    users = UserService(db).get_users_service(user['id'], project_id)
+    return users
 
 @router.post('/users/{user_id}/invite', status_code=status.HTTP_201_CREATED)
 def invite_in_project(request: Request,  
@@ -53,49 +45,22 @@ def invite_in_project(request: Request,
         db: db_dependency,
         inv_user_id: int = Query(None),
         user_email: str = Query(None)):
-    try: 
-        UserService(db).invite_user(user, request, project_id, inv_user_id, user_email)
-        return {
-            "message": "Пользователь отправлено приглашение в проект"
-        }
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    UserService(db).invite_user(user, request, project_id, inv_user_id, user_email)
+    return {
+        "message": "Пользователь отправлено приглашение в проект"
+    }
 
 @router.post('/users/confirm/{access_token}', status_code=status.HTTP_201_CREATED)
 def confirm_invite(access_token: str, db: db_dependency):
-    try:
-        user_id, project_id = UserService(db).confirm_invite(access_token)
-        return {'user_id': user_id,
-            "project_id": project_id
-        }
-    except HTTPException as e:
-        raise e
+    user_id, project_id = UserService(db).confirm_invite(access_token)
+    return {'user_id': user_id,
+        "project_id": project_id
+    }
 
 @router.delete('/projects/{project_id}/leave', status_code=status.HTTP_204_NO_CONTENT)
 def leave_project(project_id: int, user: user_dependency, db: db_dependency):
-    try:
-        UserService(db).leave_project(user['id'], project_id)
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    UserService(db).leave_project(user['id'], project_id)
 
 @router.delete('/projects/{project_id}/kick/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
 def kick_from_project(project_id: int, user_id: int, user: user_dependency, db: db_dependency):
-    try:
-        UserService(db).kick_user_from_project(user['id'], user_id, project_id)
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    UserService(db).kick_user_from_project(user['id'], user_id, project_id)

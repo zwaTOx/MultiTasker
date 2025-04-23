@@ -74,6 +74,7 @@ class UserResponse(BaseModel):
     username: Optional[str] = Field(default = None)  
     icon_id: Optional[int] = Field(default = None)  
     is_verified: bool  = Field(default = True)  
+    is_admin: Optional[bool] = Field(default=False)
 
 class ProjectUserResponse(BaseModel):
     user_id: int

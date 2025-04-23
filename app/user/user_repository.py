@@ -58,7 +58,8 @@ class UserRepository:
             login=user.login,
             username=user.username,
             icon_id=user.icon_id,
-            is_verified=user.is_verified
+            is_verified=user.is_verified,
+            is_admin=user.is_admin
         )
     
     def get_users(self) -> List[UserResponse]:

@@ -54,9 +54,9 @@ class UserService:
     def get_users_service(self, user_id: int, project_id: int = None) -> List[UserResponse]:
         if project_id is not None:
             if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
-                raise HTTPException(status_code=403, detail="Доступ запрещен")
+                raise HTTPException(status_code=403, detail="Access is denied")
             project = ProjectRepository(self.db).get_project(project_id) 
-            users = UserProjectAssociation(self.db).get_users_in_project(project_id)
+            users = UserProjectAssociation(self.db).get_users_in_project(project.id)
         else:
             users = UserRepository(self.db).get_users()
         return users or []
@@ -118,29 +118,32 @@ class UserService:
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Пользователь не является участником проекта"
+                detail="The user is not a member of the project"
             )
-        if not ProjectRepository(self.db).check_project_existing(project_id):
-            raise ProjectNotFound(project_id)
+        project = ProjectRepository(self.db).get_project(project_id)
+        if user_id == project.owner_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are the owner of the project. The project must be deleted in order to leave it."
+            )
         UserProjectAssociation(self.db).leave_project(user_id, project_id)
 
     def kick_user_from_project(self, req_id: int, user_id, project_id: int):
         if not ProjectRepository(self.db).check_project_owner(req_id, project_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Вы не являетесь владельцем проекта"
+                detail="You are not the owner of the project or admin"
             )
-        if not ProjectRepository(self.db).check_project_existing(project_id):
-            raise ProjectNotFound(project_id)
+        ProjectRepository(self.db).check_project_existing(project_id)
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Пользователя нет в проекте"
+                detail="The user is not in the project"
             )
         if user_id == req_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Кикнуть себя из проекта нельзя"
+                detail="You can't kick yourself out of the project"
             )
         UserProjectAssociation(self.db).leave_project(user_id, project_id)
 
@@ -148,7 +151,7 @@ class UserService:
         if not UserRepository(self.db).check_admin_perms(user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Доступ запрещен"
+                detail="Access is denied"
             )
         target_user = UserRepository(self.db).get_user(upd_user_id)
         UserRepository(self.db).update_admin(target_user.id, is_admin)
