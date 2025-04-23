@@ -33,13 +33,10 @@ class CodeRepository:
         reset_code = self.db.query(db_ResetCode).filter(
             db_ResetCode.code == code
         ).first()
-
         if not reset_code:
             return (False, None)
-        
-        current_time = datetime.utcnow()
+        current_time = datetime.now()
         code_expiration_time = reset_code.created_at + timedelta(minutes=10)
-        
         if current_time > code_expiration_time:
             self.db.delete(reset_code)
             self.db.commit()

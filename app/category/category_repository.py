@@ -20,8 +20,10 @@ class CategoryRepository:
             raise CategoryNotFound(category_id, user_id)
         return category
 
-    def get_category(self, user_id: int, category_id: int) -> CategoryResponseSchema|None:
+    def get_category(self, user_id: int, category_id: int) -> CategoryResponseSchema:
         category = self._get_category(category_id, user_id)
+        if not db_category:
+            raise CategoryNotFound(category_id, user_id)
         return CategoryResponseSchema(
             id = category_id,
             name = category.name,

@@ -32,8 +32,7 @@ async def create_category(category: CreateCategoryRequest, user: user_dependency
         "category_id": category_id
     }
 
-@router.get('/',
-    response_model=List[CategoryResponseExample])
+@router.get('/', response_model=List[CategoryResponseExample])
 async def get_categories(user: user_dependency, db: db_dependency):
     categories = CategoryService(db).get_categories(user['id'])
     return categories
