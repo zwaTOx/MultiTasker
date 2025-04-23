@@ -37,7 +37,8 @@ class ProjectRepository:
             id=project.id,
             name=project.name,
             icon_id=project.icon_id,
-            created_at=project.created_at
+            created_at=project.created_at,
+            owner_id=project.user_id
         )
     
     def get_project(self, project_id: int, user_id: int = None) -> ProjectResponse:

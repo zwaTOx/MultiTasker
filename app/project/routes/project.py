@@ -33,5 +33,5 @@ async def get_projects(user: user_dependency, db: db_dependency,
 @router.put('/{project_id}')
 async def move_project_in_category(project_id: int, request: MoveProjectRequest, 
     user: user_dependency, db: db_dependency):  
-    ProjectService(db).move_project_in_category_service(user['id'], project_id, request)
+    ProjectService(db).move_project_in_category(user['id'], project_id, request)
     return {"detail": "Project category successfully changed"}

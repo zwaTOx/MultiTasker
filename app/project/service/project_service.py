@@ -21,17 +21,17 @@ class ProjectService:
             projects = UserProjectAssociation(self.db).get_accessed_projects(user_id)
         return projects
     
-    def move_project_in_category_service(self, user_id: int, project_id: int,
+    def move_project_in_category(self, user_id: int, project_id: int,
         request: MoveProjectRequest):
         category = CategoryRepository(self.db).get_category(user_id, request.category_id)
         ProjectRepository(self.db).check_project_existing(project_id)
         UserProjectAssociation(self.db).change_project_category(user_id, project_id, category.id)
         
-    def get_my_projects_service(self, user_id: int) -> List[MyProjectResponse]:
+    def get_my_projects(self, user_id: int) -> List[MyProjectResponse]:
         projects = ProjectRepository(self.db).get_my_projects(user_id)
         return projects
     
-    def create_project_service(self, user_id, project_data: CreateProjectRequest, 
+    def create_project(self, user_id, project_data: CreateProjectRequest, 
         category_id: int = None) -> ProjectResponse:
         if category_id is not None:
             category = CategoryRepository(self.db).get_category(user_id, category_id)
@@ -39,7 +39,7 @@ class ProjectService:
         UserProjectAssociation(self.db).create_project(user_id, project.id, category.id)
         return project
     
-    def update_project_service(self, user_id: int, project_id: int,
+    def update_project(self, user_id: int, project_id: int,
         project_data: UpdateProjectRequest):
         is_admin = UserRepository(self.db).check_admin_perms(user_id)
         if is_admin:
@@ -48,7 +48,7 @@ class ProjectService:
             project = ProjectRepository(self.db).get_project(project_id, user_id)
         ProjectRepository(self.db).update_project(project.id, project_data)
 
-    def delete_project_service(self, user_id: int, project_id: int):
+    def delete_project(self, user_id: int, project_id: int):
         is_admin = UserRepository(self.db).check_admin_perms(user_id)
         ProjectRepository(self.db).delete_project(user_id, project_id, is_admin)
         
