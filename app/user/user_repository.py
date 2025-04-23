@@ -2,7 +2,7 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from ..user.schemas import UserResponse
+from ..user.schemas import UpdateUserRequest, UserResponse
 from ..models_db import User as db_User
 from ..exceptions import UserNotFound
 
@@ -98,7 +98,7 @@ class UserRepository:
         user = self._get_user_by_id(user_id)
         return user.is_admin
     
-    def update_user(self, user_id: int, user_data: UserResponse):
+    def update_user(self, user_id: int, user_data: UpdateUserRequest):
         user = self._get_user_by_id(user_id)
         if user_data.new_username is not None:
             user.username = user_data.new_username

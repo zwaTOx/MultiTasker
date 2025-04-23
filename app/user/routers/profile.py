@@ -30,15 +30,7 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.put('/me')
 async def update_user(user_data: UpdateUserRequest, user: user_dependency, db: db_dependency):
-    try:
-        ProfileService(db).update_profile(user['id'], user_data)
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    ProfileService(db).update_profile(user['id'], user_data)
     return {
         "message": "User updated successfully",
     }
