@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from fastapi import HTTPException
 from sqlalchemy import literal
 from sqlalchemy.orm import Session
 
@@ -65,7 +66,7 @@ class UserProjectAssociation:
             is_verified=user.is_verified
         ) for user in users]
 
-    def get_accessed_projects(self, user_id: int) -> List[Dict[str, Any]]:
+    def get_accessed_projects(self, user_id: int) -> List[ProjectWithMembershipResponse]:
         if not UserRepository(self.db).check_admin_perms(user_id):
             projects = self.db.query(
                 db_project.id,
@@ -146,9 +147,7 @@ class UserProjectAssociation:
         )
         .first()
         )
-
-        if association:
-            association.category_id = category_id
-            self.db.commit()
-            return True
-        return False
+        if not association:
+            HTTPException(status_code=403, detail="You are not member of this project")
+        association.category_id = category_id
+        self.db.commit()

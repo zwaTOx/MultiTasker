@@ -31,3 +31,13 @@ class ProjectNotFound(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=detail,
         )
+
+class AttachmentNotFound(HTTPException):
+    def __init__(self, attachment_id: int = None):
+        detail = "Attachment not found"
+        if attachment_id:
+            detail = f"Attachment with id {attachment_id} not found"
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )

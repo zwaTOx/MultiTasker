@@ -1,6 +1,7 @@
 import os
 from sqlalchemy.orm import Session
 
+from ..exceptions import AttachmentNotFound
 from ..user.schemas import AttachmentResponse
 from ..database import Sessionlocal
 from ..models_db import Attachment as db_Attachment
@@ -54,6 +55,7 @@ class AttachmentRepository:
         self.db.commit()
         return True
 
-    def check_attachment_exist(self, attach_id) -> bool:
+    def check_attachment_exist(self, attach_id):
         attach = self.db.query(db_Attachment).filter(db_Attachment.id == attach_id).first()
-        return attach is not None
+        if attach is None:
+            raise AttachmentNotFound(attach_id)

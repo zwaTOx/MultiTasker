@@ -2,8 +2,7 @@ from operator import and_
 from typing import List
 from sqlalchemy.orm import Session
 
-from app.exceptions import ProjectNotFound
-
+from ..exceptions import AttachmentNotFound, ProjectNotFound
 from ..user.attachment_repository import AttachmentRepository
 from ..project.schemas import UpdateProjectRequest
 from ..project.schemas import ProjectResponse, MyProjectResponse
@@ -22,9 +21,10 @@ class ProjectRepository:
         user = UserRepository(self.db).get_user(user_id)
         return project is not None or user.is_admin
     
-    def check_project_existing(self, project_id: int) -> bool:
+    def check_project_existing(self, project_id: int):
         project = self.get_project(project_id)
-        return project is not None
+        if project is None:
+            raise ProjectNotFound(project_id)
     
     def create_project(self, name, user_id) -> ProjectResponse:
         project = db_project(
@@ -86,11 +86,10 @@ class ProjectRepository:
         if project_data.name is not None:
             project.name = project_data.name
         if project_data.icon_id is not None:
-            if not AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id):
-                raise ValueError('Attachment not found')
+            AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id)
             project.icon_id = project_data.icon_id 
-        self.db.commit()
         self.db.refresh(project)
+        self.db.commit()
 
     def delete_project(self, user_id: int, project_id: int, is_admin: bool = False) -> bool:
         if is_admin:
@@ -101,7 +100,7 @@ class ProjectRepository:
                 db_project.user_id == user_id
             ).first()
         if project is None:
-            raise ValueError('Project not found')
+            raise ProjectNotFound(project_id)
         self.db.delete(project)
         self.db.commit()
         

@@ -26,33 +26,12 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 @router.get('/', response_model=List[ProjectWithMembershipResponse])
 async def get_projects(user: user_dependency, db: db_dependency, 
     category_id: int = Query(None)):
-    try: 
-        projects = ProjectService(db).get_projects_service(user['id'], category_id)
-        return projects
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    projects = ProjectService(db).get_projects(user['id'], category_id)
+    return projects
+
 
 @router.put('/{project_id}')
 async def move_project_in_category(project_id: int, request: MoveProjectRequest, 
     user: user_dependency, db: db_dependency):  
-    try:
-        ProjectService(db).move_project_in_category_service(user['id'], project_id, request)
-        return {"detail": "Project category successfully changed"}
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        )     
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        ) 
+    ProjectService(db).move_project_in_category_service(user['id'], project_id, request)
+    return {"detail": "Project category successfully changed"}
