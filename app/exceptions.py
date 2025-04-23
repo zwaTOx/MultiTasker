@@ -41,3 +41,13 @@ class AttachmentNotFound(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=detail,
         )
+
+class TaskNotFound(HTTPException):
+    def __init__(self, task_id: int = None):
+        detail = "Task not found"
+        if task_id:
+            detail = f"Attachment with id {task_id} not found"
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )

@@ -31,70 +31,26 @@ async def get_tasks_v2(user: user_dependency, db: db_dependency,
 
 @router.get('/{task_id}', response_model=TaskDetailResponse)
 async def get_task(task_id: int, user: user_dependency, db: db_dependency):
-    try:
-        task = TaskService(db).get_task(task_id, user['id'])
-        return task
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        ) 
+    task = TaskService(db).get_task(task_id, user['id'])
+    return task
 
 @router.post('/{project_id}', status_code=status.HTTP_201_CREATED)
 async def create_task(project_id: int, task_data: TaskCreateRequest, 
     user: user_dependency, db: db_dependency):
-    try:
-        task_id = TaskService(db).create_task(user['id'], project_id, task_data)
-        return {
-            "message": "Task created successfully", 
-            "task_id": task_id
-            }
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        )    
+    task_id = TaskService(db).create_task(user['id'], project_id, task_data)
+    return {
+        "message": "Task created successfully", 
+        "task_id": task_id
+        }
 
 @router.put('/{task_id}')
 async def update_task(task_id: int, task_data: TaskUpdateRequest, user: user_dependency, db: db_dependency):
-    try:
-        task_id = TaskService(db).update_task(user['id'], task_id, task_data)
-        return {
-            "message": "Task updated successfully", 
-            "task_id": task_id
-            }
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        )    
+    task_id = TaskService(db).update_task(user['id'], task_id, task_data)
+    return {
+        "message": "Task updated successfully", 
+        "task_id": task_id
+        }
 
 @router.delete('/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(task_id, user: user_dependency, db: db_dependency):
-    try: 
-        TaskService(db).delete_task(user['id'], task_id)
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        )    
+    TaskService(db).delete_task(user['id'], task_id)

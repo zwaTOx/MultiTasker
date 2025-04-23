@@ -3,6 +3,7 @@ from typing import List, Optional
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload, aliased
 
+from ...exceptions import TaskNotFound, UserNotFound
 from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskUpdateRequest
 from ..models import Task as db_Task
 from ...models_db import Project, User, UserProjectAssociation
@@ -15,7 +16,7 @@ class TaskRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_task(self, task_id: int) -> TaskDetailResponse|None:
+    def get_task(self, task_id: int) -> TaskDetailResponse:
         result = (
         self.db.query(
             db_Task,
@@ -34,7 +35,7 @@ class TaskRepository:
         .first()
         )
         if not result:
-            return None
+            raise TaskNotFound(task_id)
         task, owner_id, owner_email, owner_name, performer_id, performer_email, performer_name, project_name = result
         task.owner_id = owner_id
         task.owner_email = owner_email
@@ -185,7 +186,11 @@ class TaskRepository:
         if task_data.deadline is not None:
             task.deadline = task_data.deadline
         if task_data.performer_id is not None:
-            task.performer_id = task_data.performer_id
+            try:
+                user = UserRepository(self.db).get_user(task_data.performer_id)
+                task.performer_id = task_data.performer_id
+            except UserNotFound:
+                pass
         if task_data.indicator is not None:
             task.indicator = task_data.indicator
         if task_data.status:

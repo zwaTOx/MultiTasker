@@ -2,6 +2,7 @@
 from fastapi import Depends, HTTPException, status
 from typing import Optional
 
+from ...exceptions import UserNotFound
 from ...user.user_repository import UserRepository
 from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
@@ -14,16 +15,9 @@ class TaskService:
     
     def get_task(self, task_id: int, user_id: int) -> Optional[TaskDetailResponse]:
         task = TaskRepository(self.db).get_task(task_id)
-        
-        if task is None:
-            raise ValueError("Task not found")
-            
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
-            raise PermissionError("Access denied to project")
-            
+            raise HTTPException(status_code=403, detail="Access denied to project")
         project = ProjectRepository(self.db).get_project(task.project_id)
-        if project is None:
-            raise ValueError("Project not found")
         return task
     
     def get_tasks(self, user_id, filters: TaskFilters = Depends()):
@@ -32,42 +26,33 @@ class TaskService:
     
     def create_task(self, user_id: int, project_id: int, task_data: TaskCreateRequest) -> int:
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
-            raise PermissionError("Access denied to project")
-        performer_user = UserRepository(self.db).get_user(task_data.performer_id)
-        if performer_user is None:
+            raise HTTPException(status_code=403, detail="Access denied to project")
+        try:
+            performer_user = UserRepository(self.db).get_user(task_data.performer_id)
+        except UserNotFound:
             #Отправить письмо на email
             task_data.performer_id = user_id
         project = ProjectRepository(self.db).get_project(project_id)
-        if project is None:
-            raise ValueError("Project not found")
         task_id = TaskRepository(self.db).create_task(project_id, task_data, user_id)
         return task_id
     
     def update_task(self, user_id, task_id: int, task_data: TaskUpdateRequest) -> int:
         task = TaskRepository(self.db).get_task(task_id)
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
-            raise PermissionError(f"У вас нет доступа к этому проекту."
-            "Только участники проекта могут удалять его задачи")
-        if task is None:
-            raise ValueError(f"Задача с ID {task_id} не найдена в системе")
+            raise HTTPException(status_code=403, detail="Access denied to project")
         is_task_owner = (task.author_id==user_id)
         is_project_owner = ProjectRepository(self.db).check_project_owner(user_id, task.project_id)
         if not (is_task_owner or is_project_owner):
-            raise PermissionError("Недостаточно прав для изменения задачи. "
-            "Только владелец задачи или владелец проекта может удалить задачу")
+            raise HTTPException(status_code=403, detail="Access denied to tasks")
         task_id = TaskRepository(self.db).update_task(task.id, task_data)
         return task_id
     
     def delete_task(self, user_id: int, task_id: int):
         task = TaskRepository(self.db).get_task(task_id)
-        if task is None:
-            raise ValueError(f"Задача с ID {task_id} не найдена в системе")
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, task.project_id):
-            raise PermissionError(f"У вас нет доступа к этому проекту."
-            "Только участники проекта могут удалять его задачи")
+            raise HTTPException(status_code=403, detail="Access denied to project")
         is_task_owner = (task.author_id == user_id)
         is_project_owner = ProjectRepository(self.db).check_project_owner(user_id, task.project_id)
         if not (is_task_owner or is_project_owner):
-            raise PermissionError("Недостаточно прав для удаления задачи. "
-            "Только владелец задачи или владелец проекта может удалить задачу")
+            raise HTTPException(status_code=403, detail="Access denied to task")
         TaskRepository(self.db).delete_task(task_id)
