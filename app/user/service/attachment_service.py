@@ -2,6 +2,7 @@
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
+from ...exceptions import AttachmentNotFound
 from ...project.project_repository import ProjectRepository
 from ...user.attachment_repository import AttachmentRepository
 from ...user.user_repository import UserRepository
@@ -17,10 +18,9 @@ MAX_FILE_SIZE = 50 * 1024 * 1024
 class AttachmentService:
     def __init__(self, db):
         self.db = db
+
     def post_attachment_service(self, user_id: int, uploaded_file: UploadFile) -> int:
         founded_user = UserRepository(self.db).get_user(user_id)
-        if founded_user is None:
-            raise ValueError('User not found')
         file = uploaded_file.file
         filename = str(uuid.uuid4()) + os.path.splitext(uploaded_file.filename)[1]
         file_path = os.path.join(UPLOAD_DIRECTORY, filename)
@@ -47,19 +47,13 @@ class AttachmentService:
 
     def get_user_icon(self, user_id):
         founded_user = UserRepository(self.db).get_user(user_id)
-        if founded_user is None:
-            raise HTTPException(status_code=404, detail="User not found")
         if founded_user.icon_id is None:
             return self.get_default_user_icon()
         attachment = AttachmentRepository(self.db).get_attachment_by_id(founded_user.icon_id)
-        if not attachment:
-            raise HTTPException(status_code=404, detail="Attachment not found")
         return os.path.join(UPLOAD_DIRECTORY, attachment.path)
 
     def get_project_icon(self, project_id):
         project = ProjectRepository(self.db).get_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
         if project.icon_id is None:
             return self.get_default_project_icon()
         attachment = AttachmentRepository(self.db).get_attachment_by_id(project.icon_id)
@@ -84,26 +78,15 @@ class AttachmentService:
     def delete_icon(self, user_id: int, project_id: int):
         if project_id is not None:
             project = ProjectRepository(self.db).get_project(project_id)
-            if project is None:
-                raise ValueError("Project not found")
             if project.owner_id != user_id:
                 raise HTTPException(status_code=403, detail="Access Denied")
             if project.icon_id is None:
-                raise ValueError("Project icon not found")
+                raise AttachmentNotFound()
             attachment = AttachmentRepository(self.db).get_attachment_by_id(project.icon_id)
-            if attachment is None:
-                raise ValueError("Attachment not found")
-            if not AttachmentRepository(self.db).delete_attachment(attachment_id=project.icon_id):
-                raise HTTPException(status_code=500, detail="Failed to delete attachment")
+            AttachmentRepository(self.db).delete_attachment(attachment_id=project.icon_id)
             return
         founded_user = UserRepository(self.db).get_user(user_id)
-        if not founded_user:
-            raise ValueError("User not found")
         if founded_user.icon_id is None:
-            raise ValueError("User icon not found")
+            raise AttachmentNotFound()
         attachment = AttachmentRepository(self.db).get_attachment_by_id(founded_user.icon_id)
-        if attachment is None:
-            raise ValueError("Attachment not found")
-        if not AttachmentRepository(self.db).delete_attachment(attachment.id):
-            raise HTTPException(status_code=500, detail="Failed to delete attachment")
-        return
+        AttachmentRepository(self.db).delete_attachment(attachment.id)

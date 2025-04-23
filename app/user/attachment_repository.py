@@ -25,20 +25,20 @@ class AttachmentRepository:
         )
     
     def get_attachment_by_id(self, attachment_id: int) -> db_Attachment:
-        return self.db.query(db_Attachment).filter(db_Attachment.id == attachment_id).first()
-    
-    def delete_attachment(self, attachment_id: int) -> bool:
-        attachment = self.get_attachment_by_id(attachment_id)
+        attachment = self.db.query(db_Attachment).filter(db_Attachment.id == attachment_id).first()
         if attachment is None:
-            return False
+            raise AttachmentNotFound(attachment_id)
+        return attachment
+    
+    def delete_attachment(self, attachment_id: int):
+        attachment = self.get_attachment_by_id(attachment_id)
         self.db.delete(attachment)
         self.db.commit()
         file_path = os.path.join(UPLOAD_DIRECTORY, attachment.path)
         if os.path.exists(file_path):
                 os.remove(file_path)
-        return True
     
-    def update_user_icon(self, user_id: int, attachment_id: int) -> db_User:
+    def update_user_icon(self, user_id: int, attachment_id: int) -> db_User|None:
         user = self.db.query(db_User).filter(db_User.id == user_id).first()
         if not user:
             return None

@@ -89,8 +89,8 @@ class ProjectRepository:
         if project_data.icon_id is not None:
             AttachmentRepository(self.db).check_attachment_exist(project_data.icon_id)
             project.icon_id = project_data.icon_id 
-        self.db.refresh(project)
         self.db.commit()
+        self.db.refresh(project)
 
     def delete_project(self, user_id: int, project_id: int, is_admin: bool = False) -> bool:
         if is_admin:

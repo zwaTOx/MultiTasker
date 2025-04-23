@@ -35,17 +35,9 @@ MAX_FILE_SIZE = 50 * 1024 * 1024
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def post_attachment(uploaded_file: UploadFile, user: user_dependency, db: db_dependency):
-    try:
-        attachment_id = AttachmentService(db).post_attachment_service(user['id'], uploaded_file)
-        return {"message": "Файл успено загружен",
-             "attachment_id": attachment_id}
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
+    attachment_id = AttachmentService(db).post_attachment_service(user['id'], uploaded_file)
+    return {"message": "Файл успено загружен",
+            "attachment_id": attachment_id}
 
 @router.get('/icon', response_class=FileResponse)
 async def get_icon(
@@ -65,16 +57,13 @@ async def get_icon(
             status_code=400,
             detail="Должен быть указан ровно один параметр: user_id ИЛИ project_id"
         )
-    try:
-        if project_id is not None:
-            file_path = AttachmentService(db).get_project_icon(project_id)
-        else:
-            if user_id is not None:
-                file_path = AttachmentService(db).get_user_icon(user_id)
-            else: 
-                file_path = AttachmentService(db).get_user_icon(user['id'])
-    except HTTPException as e:
-        raise e
+    if project_id is not None:
+        file_path = AttachmentService(db).get_project_icon(project_id)
+    else:
+        if user_id is not None:
+            file_path = AttachmentService(db).get_user_icon(user_id)
+        else: 
+            file_path = AttachmentService(db).get_user_icon(user['id'])
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Icon file not found on server")
     return FileResponse(file_path)
@@ -85,13 +74,4 @@ async def delete_icon(
     db: db_dependency,
     project_id: int = Query(None, description="ID проекта")
 ):
-    try:
-        AttachmentService(db).delete_icon(user['id'], project_id)
-    except HTTPException as e:
-        raise e
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-        
+    AttachmentService(db).delete_icon(user['id'], project_id)
