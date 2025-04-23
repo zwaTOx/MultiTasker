@@ -12,3 +12,22 @@ class CategoryNotFound(HTTPException):
             detail=detail,
         )
 
+class UserNotFound(HTTPException):
+    def __init__(self, user_id: int = None):
+        detail = "User not found"
+        if user_id:
+            detail = f"User with id {user_id} not found"
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )
+
+class ProjectNotFound(HTTPException):
+    def __init__(self, project_id: int = None):
+        detail = "Project not found"
+        if project_id:
+            detail = f"Project with id {project_id} not found"
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )

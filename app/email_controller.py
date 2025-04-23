@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 load_dotenv()
 SENDER_EMAIL = os.getenv('SENDER_EMAIL')
@@ -38,7 +39,9 @@ def send_recovery_code(email: str, code: str=generate_code()):
             host.sendmail(SENDER_EMAIL, email, msg.as_string())
         print("Код восстановления отправлен на", email)
     except Exception as e:
-        raise RuntimeError(f"Ошибка при отправке письма: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Send email failed"
+            )
     return recovery_code
 
 def send_project_invite(

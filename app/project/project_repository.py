@@ -2,6 +2,8 @@ from operator import and_
 from typing import List
 from sqlalchemy.orm import Session
 
+from app.exceptions import ProjectNotFound
+
 from ..user.attachment_repository import AttachmentRepository
 from ..project.schemas import UpdateProjectRequest
 from ..project.schemas import ProjectResponse, MyProjectResponse
@@ -38,13 +40,13 @@ class ProjectRepository:
             created_at=project.created_at
         )
     
-    def get_project(self, project_id: int, user_id: int = None) -> ProjectResponse|None:
+    def get_project(self, project_id: int, user_id: int = None) -> ProjectResponse:
         query = self.db.query(db_project).filter(db_project.id == project_id)
         if user_id is not None:
             query = query.filter(db_project.user_id == user_id)
         project = query.first()
-        if not project:
-            return None
+        if project is None:
+            raise ProjectNotFound(project_id)
         return ProjectResponse(
             id=project.id,
             name=project.name,

@@ -12,6 +12,7 @@ from ...project.project_repository import ProjectRepository
 from ...user.user_project_association_repo import UserProjectAssociation
 from ..schemas import CreateUser, UserResponse
 from ..user_repository import UserRepository
+from ...exceptions import ProjectNotFound, UserNotFound
 
 load_dotenv()
 TEMP_TOKEN_EXPIRE_MINUTES = int(os.getenv('TEMP_TOKEN_EXPIRE_MINUTES'))
@@ -24,8 +25,9 @@ class UserService:
         self.db = db
 
     def create_user(self, create_user_rq: CreateUser) -> tuple[int, str]:
-        existing_user = UserRepository(self.db).get_user_by_email(create_user_rq.login)
-        if not existing_user:
+        try:
+            existing_user = UserRepository(self.db).get_user_by_email(create_user_rq.login)
+        except UserNotFound:
             new_user = UserRepository(self.db).create_user(create_user_rq.login, create_user_rq.password)
             return new_user.id, "User successfully created"
         if existing_user and existing_user.is_verified is True:
@@ -40,8 +42,6 @@ class UserService:
 
     def login_user(self, username, password) -> str:
         user = UserRepository(self.db).auth_user(username, password)
-        if not user:
-            raise HTTPException(status_code=401, detail='Could not validate user.')
         if user.is_verified is False:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,8 +56,6 @@ class UserService:
             if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
                 raise HTTPException(status_code=403, detail="Доступ запрещен")
             project = ProjectRepository(self.db).get_project(project_id) 
-            if project is None:
-                raise ValueError("Project not found")
             users = UserProjectAssociation(self.db).get_users_in_project(project_id)
         else:
             users = UserRepository(self.db).get_users()
@@ -73,13 +71,12 @@ class UserService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions to add a user to the project."
             )
-        invited_user = UserRepository(self.db).get_user(inv_user_id)
-        if not invited_user:
+        try:
+            invited_user = UserRepository(self.db).get_user(inv_user_id)
+        except UserNotFound:
             invited_user = UserRepository(self.db).create_unverified_user(user_email)
             inv_user_id = invited_user.id
         project = ProjectRepository(self.db).get_project(project_id)
-        if not project:
-            raise ValueError("Project not found")
         existing_assoc = UserProjectAssociation(self.db).check_user_in_project(inv_user_id, project_id)
         if existing_assoc:
             raise HTTPException(
@@ -124,7 +121,7 @@ class UserService:
                 detail="Пользователь не является участником проекта"
             )
         if not ProjectRepository(self.db).check_project_existing(project_id):
-            raise ValueError('Project not found')
+            raise ProjectNotFound(project_id)
         UserProjectAssociation(self.db).leave_project(user_id, project_id)
 
     def kick_user_from_project(self, req_id: int, user_id, project_id: int):
@@ -134,10 +131,7 @@ class UserService:
                 detail="Вы не являетесь владельцем проекта"
             )
         if not ProjectRepository(self.db).check_project_existing(project_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Проект не найден"
-            )
+            raise ProjectNotFound(project_id)
         if not UserProjectAssociation(self.db).check_user_in_project(user_id, project_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -158,9 +152,4 @@ class UserService:
             )
 
         target_user = UserRepository(self.db).get_user(upd_user_id)
-        if not target_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Пользователь не найден"
-            )
         UserRepository(self.db).update_admin(upd_user_id, is_admin)

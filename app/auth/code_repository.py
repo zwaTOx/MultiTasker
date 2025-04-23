@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from random import randint
 from sqlalchemy.orm import Session
+
+from app.exceptions import UserNotFound
 from .models import PasswordResetCode as db_ResetCode
 from ..models_db import User
 
@@ -12,7 +14,7 @@ class CodeRepository:
         user = self.db.query(User).filter(User.login == user_email).first()
         self.delete_expired_codes()
         if not user:
-            raise ValueError(f"User with email {user_email} not found")
+            raise UserNotFound()
         self.delete_user_codes(user.id)
         data = db_ResetCode(
             user_id=user.id,  

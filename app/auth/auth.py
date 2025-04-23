@@ -36,70 +36,40 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("/register", status_code=status.HTTP_201_CREATED) 
 async def create_user(db: db_dependency, create_user_rq: CreateUser):
-    try:
-        user_id, message = UserService(db).create_user(create_user_rq)
-        return {
-            "message": message,
-            "id": user_id
-        }
-    except HTTPException as e:
-        raise e
+    user_id, message = UserService(db).create_user(create_user_rq)
+    return {
+        "message": message,
+        "id": user_id
+    }
     
 @router.post('/login', response_model=Token, status_code=status.HTTP_201_CREATED)
 async def login_for_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
 ):
-    try:
-        token = UserService(db).login_user(form_data.username, form_data.password)
-        return {'access_token': token, 'token_type': 'bearer'}
-    except HTTPException as e:
-        raise e
+    token = UserService(db).login_user(form_data.username, form_data.password)
+    return {'access_token': token, 'token_type': 'bearer'}
     
 @router.post('/сode/send', status_code=status.HTTP_201_CREATED)
 async def create_password_restore_code(user_email: str, db: db_dependency):
-    try:
-        CodeService(db).create_password_restore_code(user_email)
-        return {
-        "message": f"Code sent on {user_email}"
-        }
-    except RuntimeError as e:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=str(e)
-        )
-    except HTTPException as e:
-        raise e
+    CodeService(db).create_password_restore_code(user_email)
+    return {
+    "message": f"Code sent on {user_email}"
+    }
 
 @router.post('/code/verify/{code}', response_model=Token, status_code=status.HTTP_201_CREATED)
 async def auth_with_code(code: str, db: db_dependency):
-    try:
-        token = CodeService(db).auth_with_code(code)
-        return {
-        'access_token': token, 
-        'token_type': 'bearer'
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except HTTPException as e:
-        raise e
+    token = CodeService(db).auth_with_code(code)
+    return {
+    'access_token': token, 
+    'token_type': 'bearer'
+    }
 
 @router.post('/password/reset', status_code=status.HTTP_201_CREATED)
 async def reset_password(token: str, reset_data: ResetPasswordRequest, db: db_dependency):
-    try:
-        CodeService(db).reset_password(token, reset_data)
-        return {"message": "Password successfully changed"}
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, 
-            detail=str(e)
-        )
-    except HTTPException as e:
-        raise e
-
+    CodeService(db).reset_password(token, reset_data)
+    return {"message": "Password successfully changed"}
+    
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)

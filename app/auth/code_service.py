@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
+from ..exceptions import UserNotFound
 from ..user.schemas import ResetPasswordRequest
 from ..user.user_repository import UserRepository
 from ..email_controller import send_recovery_code
@@ -30,7 +31,7 @@ class CodeService:
     @staticmethod
     def create_invite_project_token(project_id: int, id: int, expires_delta: timedelta):
         encode = {'project_id': project_id, 'id': id}
-        expires = datetime.utcnow() + expires_delta
+        expires = datetime.now() + expires_delta
         encode.update({'exp': expires})
         return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
     
@@ -87,8 +88,6 @@ class CodeService:
                 detail="Invalid or expired code"
             )
         user = UserRepository(self.db).get_user(user_id)
-        if not user:
-            ValueError("User not found")
         token = self.create_access_token(
             user.login, 
             user.id, 
@@ -105,8 +104,6 @@ class CodeService:
                 detail="Invalid token format"
             )
         user = UserRepository(self.db).get_user_by_email(payload['login'])
-        if not user:
-            raise ValueError("User not found")
         if reset_data.new_password != reset_data.confirm_password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
