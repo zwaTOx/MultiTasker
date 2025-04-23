@@ -51,7 +51,7 @@ class UserRepository:
             is_verified=user.is_verified
         )
 
-    def get_user(self, user_id: int) -> UserResponse|None:
+    def get_user(self, user_id: int) -> UserResponse:
         user = self._get_user_by_id(user_id)
         return UserResponse(
             id = user.id,

@@ -150,6 +150,5 @@ class UserService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Доступ запрещен"
             )
-
         target_user = UserRepository(self.db).get_user(upd_user_id)
-        UserRepository(self.db).update_admin(upd_user_id, is_admin)
+        UserRepository(self.db).update_admin(target_user.id, is_admin)

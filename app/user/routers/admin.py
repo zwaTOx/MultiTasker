@@ -26,11 +26,9 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.put('/admin/{user_id}')
 async def change_admin(user_id: int, is_admin: bool, user: user_dependency, db: db_dependency):
-    try: 
-        UserService(db).update_admin(user['id'], user_id, is_admin)
-        return {
+    UserService(db).update_admin(user['id'], user_id, is_admin)
+    return {
         "message": "Данные пользователя обновлены"
-        }
-    except HTTPException as e:
-        raise e
+    }
+
     
