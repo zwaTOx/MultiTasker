@@ -116,4 +116,8 @@ class TaskItemResponse(BaseModel):
     project_id: int
 
 
+class TaskItemWithAuthorResponse(TaskItemResponse):
+    author_email: Optional[str] = None
+    author_name: Optional[str] = None
+
     

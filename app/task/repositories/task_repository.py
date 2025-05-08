@@ -4,7 +4,7 @@ from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload, aliased
 
 from ...exceptions import TaskNotFound, UserNotFound
-from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskUpdateRequest
+from ..schemas import TaskCreateRequest, TaskDetailResponse, TaskFilters, TaskItemResponse, TaskItemWithAuthorResponse, TaskUpdateRequest
 from ..models import Task as db_Task
 from ...models_db import Project, User, UserProjectAssociation
 from ...user.user_repository import UserRepository
@@ -84,38 +84,62 @@ class TaskRepository:
     #     ).all()
     #     return tasks
 
-    def get_project_tasks(self, project_id):
+    def get_project_tasks(self, project_id: int) -> List[TaskItemWithAuthorResponse]:
         tasks = self.db.query(
-            db_Task.id,
-            db_Task.name,
-            db_Task.indicator,  
-            db_Task.description,  
+            db_Task,
             User.login.label('author_email'), 
-            User.username.label('author_name') 
+            User.username.label('author_name')
         ).join(
             User,  
             db_Task.owner_id == User.id  
-        ).filter(db_Task.project_id == project_id).all()
-        return tasks
+        ).filter(
+            db_Task.project_id == project_id
+        ).all()
+
+        return [
+            TaskItemWithAuthorResponse(
+                **task.__dict__,  
+                author_email=author_email,
+                author_name=author_name
+            ) for task, author_email, author_name in tasks
+       ]   
     
-    def get_owner_task(self, task_id: int, user_id) -> db_Task:
+    def get_owner_task(self, task_id: int, user_id: int) -> Optional[TaskItemResponse]:
+        query = self.db.query(db_Task)
         if not UserRepository(self.db).check_admin_perms(user_id):
-            return self.db.query(db_Task).filter(db_Task.id==task_id).first()
-        task = self.db.query(db_Task).filter(db_Task.id==task_id,
-        db_Task.owner_id==user_id).first()
-        return task
+            task = query.filter(db_Task.id == task_id).first()
+        else:
+            task = query.filter(
+                db_Task.id == task_id,
+                db_Task.owner_id == user_id
+            ).first()
+
+        if not task:
+            return None
+
+        return TaskItemResponse(
+            id=task.id,
+            name=task.name,
+            status=task.status,
+            indicator=task.indicator,
+            created_at=task.created_at,
+            last_change=task.last_change,
+            deadline=task.deadline,
+            description=task.description,
+            project_id=task.project_id
+        )
     
     def get_accessed_tasks_filter(self, user_id: int, 
         filters: Optional[TaskFilters] = None) -> List[TaskItemResponse]:
-        if not UserRepository(self.db).check_admin_perms(user_id):
+        if UserRepository(self.db).check_admin_perms(user_id):
+            query = self.db.query(db_Task)
+        else:
             query = self.db.query(db_Task).join(
             UserProjectAssociation,
             UserProjectAssociation.project_id == db_Task.project_id
             ).filter(
                 UserProjectAssociation.user_id == user_id
             )
-        else:
-            query = self.db.query(db_Task)
         if filters:
             if filters.status:
                 query = query.filter(db_Task.status.in_(filters.status))

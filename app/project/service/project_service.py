@@ -36,7 +36,7 @@ class ProjectService:
         if category_id is not None:
             category = CategoryRepository(self.db).get_category(user_id, category_id)
         project = ProjectRepository(self.db).create_project(project_data.name, user_id)
-        UserProjectAssociation(self.db).create_project(user_id, project.id, category.id)
+        UserProjectAssociation(self.db).create_project(user_id, project.id, category_id)
         return project
     
     def update_project(self, user_id: int, project_id: int,
